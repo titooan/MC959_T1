@@ -99,7 +99,7 @@ void showMatrixExample(){
 int main(int argc, char *argv[])
 {
 
-    //showMatrixExample();
+    showMatrixExample();
 
     int numberLines = (SIZE_AMBIENTE/STEP);
 
