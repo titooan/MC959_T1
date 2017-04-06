@@ -56,7 +56,6 @@ win32{
 }
 unix{
     LIBS=-ldl
-    LIBS += -lAdvapi32 -lgdi32 -luser32 -lshell32
 }
 #--------------------------------
 # Targets:
@@ -74,7 +73,6 @@ SOURCES += Main.cpp \
 HEADERS += $${PATH}/include/v_repLib.h \
     robot.h \
     Simulator.h \
-    CImg.h
 
 win32{
     SOURCES += $${PATH}\remoteApi\extApi.c
