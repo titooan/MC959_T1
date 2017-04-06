@@ -2,6 +2,7 @@
 #include "robot.h"
 #include "Simulator.h"
 #include <iostream>
+#include <stdio.h>
 #include <unistd.h>
 #include <valarray>
 #define SIZE_AMBIENTE 1500
@@ -15,12 +16,12 @@ void writeMatrix(std::valarray<int>* va, int num) {
     /* write data to file */
     /* file format: robotPosition[x] robotPosition[y] robotPosition[z] robotLastPosition[x] robotLastPosition[y] robotLastPosition[z]
      *              encoder[0] encoder[1] lastEncoder[0] lastEncoder[1] */
-    FILE *data =  fopen("matrix.txt", "at");
+    FILE *data =  fopen("matrix.txt", "w");
     if (data!=NULL)
     {
         for (int i=0; i<va->size()/num; i++) {
             for (int j=0; j<num; j++) {
-                fprintf(data, "%d\t",(*va)[i*num+j]);
+                fprintf(data, "%d,",(*va)[i*num+j]);
             }
             fprintf(data, "\n");
         }
@@ -52,9 +53,9 @@ void coordinatesToMatrixIndex(simxFloat* coord,simxInt* indexes,int step){
 }
 void updateMatrix(std::valarray<int>* ambiente,simxInt* posRobot,simxInt** indexesObstacles,int size ){
 
-    std::cout<< "xrobo "<<posRobot[0]<<std::endl;
-    std::cout<< "yrobo "<<posRobot[1]<<std::endl;
-    std::cout<< "numberLine "<<size<<std::endl;
+    //std::cout<< "xrobo "<<posRobot[0]<<std::endl;
+    //std::cout<< "yrobo "<<posRobot[1]<<std::endl;
+    //std::cout<< "numberLine "<<size<<std::endl;
 
 
     std::cout<< posRobot[0]*size+posRobot[1]<<std::endl;
@@ -86,9 +87,10 @@ int main(int argc, char *argv[])
     }
 
     robot = new Robot(id, "Pioneer_p3dx");
-    std::cout<< ambiente.size()<<"gello"<<std::endl;
+    //std::cout<< ambiente.size()<<"gello"<<std::endl;
     for (int i=0; i<3000; ++i)
     {
+        std::cout<<"still running..."<<std::endl;
         //std::cout << "Here we go... " << i << std::endl;
 
         std::cout<<"ok"<<std::endl;
