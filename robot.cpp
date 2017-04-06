@@ -1,7 +1,7 @@
 #include "robot.h"
 #include <iostream>
 
-simxFloat sensorAngle[8] = {90,50,30,10,-10,-30,-50,-90};
+simxFloat sensorAngle[8] = {PI/4,5/18*PI,PI/6,PI/18,-PI/18,-PI/6,-(5/18)*PI,-PI/4};
 Robot::Robot(int clientID, const char* name) {
 
     FILE *data =  fopen("gt.txt", "wt");
@@ -67,21 +67,21 @@ int Robot::frenteLivre() {
 void Robot::detectedPosition(simxFloat** position){
     int i =0;
     simxFloat posX,posY,angle,robotRay;
-    robotRay = 0.0975;
-    angle = 180*robotOrientation[2]/3.1415;
-    std::cout<<"positionRobot"<<i<<" values, x = "<<robotPosition[0]<<" y = "<<robotPosition[1]<<" gamma = "<<angle<<" bot ray"<<robotRay<<std::endl;
+    robotRay = 0.21;
+    angle = robotOrientation[2];
+    //std::cout<<"positionRobot"<<i<<" values, x = "<<robotPosition[0]<<" y = "<<robotPosition[1]<<" gamma = "<<angle<<" bot ray"<<robotRay<<std::endl;
     for(i;i<8;i++){
-        std::cout<<"sensor"<<i<<" values, sonar = "<<sonarReadings[i]<<" sensorAngle = "<<sensorAngle[i]<<std::endl;
+        //std::cout<<"sensor"<<i<<" values, sonar = "<<sonarReadings[i]<<" sensorAngle = "<<sensorAngle[i]<<std::endl;
         if(sonarReadings[i]==-1){
-            posX = -1;
-            posY = -1;
+            posX = -5000;
+            posY = -5000;
         }else{
             posX = robotPosition[0]+(sonarReadings[i]+robotRay)*cos(angle+sensorAngle[i]);
             posY = robotPosition[1]+(sonarReadings[i]+robotRay)*sin(angle+sensorAngle[i]);
         }
         position[i][0] = posX;
-        position[i][0] = posY;
-        std::cout<<"sensor"<<i<<" seen obstacle, x = "<<posX<<" y = "<<posY<<std::endl;
+        position[i][1] = posY;
+        //std::cout<<"sensor"<<i<<" seen obstacle, x = "<<posX<<" y = "<<posY<<std::endl;
     }
 }
 void Robot::updateInfo() {
@@ -144,7 +144,7 @@ void Robot::update() {
         vLeft = -0.5;
     }
 
-    move(20,-10);
+    move(vRight,vLeft);
     //move(vRight,vLeft);
 
 

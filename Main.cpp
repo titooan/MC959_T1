@@ -4,34 +4,80 @@
 #include <iostream>
 #include <unistd.h>
 #include <valarray>
-#define SIZE_AMBIENTE 15000
-#define STEP 5
+#define SIZE_AMBIENTE 1500
+#define STEP 1
 extern "C" {
    #include "extApi.h"
     #include "v_repLib.h"
 }
 
-
-
+void writeMatrix(std::valarray<int>* va, int num) {
+    /* write data to file */
+    /* file format: robotPosition[x] robotPosition[y] robotPosition[z] robotLastPosition[x] robotLastPosition[y] robotLastPosition[z]
+     *              encoder[0] encoder[1] lastEncoder[0] lastEncoder[1] */
+    FILE *data =  fopen("matrix.txt", "at");
+    if (data!=NULL)
+    {
+        for (int i=0; i<va->size()/num; i++) {
+            for (int j=0; j<num; j++) {
+                fprintf(data, "%d\t",(*va)[i*num+j]);
+            }
+            fprintf(data, "\n");
+        }
+        fprintf(data, "\n");
+        fflush(data);
+        fclose(data);
+      }
+      else
+        std::cout << "Unable to open file";
+}
+void printValarray (std::valarray<int>* va, int num)
+{
+    for (int i=0; i<va->size()/num; i++) {
+        for (int j=0; j<num; j++) {
+            std::cout << (*va)[i*num+j] << ' ';
+        }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
+}
 //indexes : {line,column}
-void coordinatesToMatrixIndex(simxFloat* coord,simxInt* indexes){
-    indexes[0] = static_cast<int>((coord[0]+7.5)*100);
-    indexes[1] = static_cast<int>((coord[1]+7.5)*100);
-    std::cout<<indexes[0]<<","<<indexes[1]<<std::endl;
+void coordinatesToMatrixIndex(simxFloat* coord,simxInt* indexes,int step){
+    int posX = static_cast<int>((coord[0]+7.5)*100);
+    int posY = static_cast<int>((coord[1]+7.5)*100);
+    posX = posX/step;
+    posY = posY/step;
+    indexes[0] = posX;
+    indexes[1] = posY;
+}
+void updateMatrix(std::valarray<int>* ambiente,simxInt* posRobot,simxInt** indexesObstacles,int size ){
+
+    std::cout<< "xrobo "<<posRobot[0]<<std::endl;
+    std::cout<< "yrobo "<<posRobot[1]<<std::endl;
+    std::cout<< "numberLine "<<size<<std::endl;
+
+
+    std::cout<< posRobot[0]*size+posRobot[1]<<std::endl;
+    (*ambiente)[posRobot[0]*size+posRobot[1]] = 0;
+    for(int i =0;i<8;i++){
+        if(indexesObstacles[i][0] >0 && indexesObstacles[i][1]>0)
+            (*ambiente)[indexesObstacles[i][0]*size+indexesObstacles[i][1]] = 1;
+    }
 }
 
 int main(int argc, char *argv[])
 {
     int numberLines = (SIZE_AMBIENTE/STEP);
 
-    std::valarray<int> ambiente(numberLines*numberLines);
+    std::valarray<int> ambiente(-1,numberLines*numberLines);
     Robot *robot;
     Simulator *vrep = new Simulator("127.0.0.1", 25000);
-    simxInt indexes[2];
-    simxFloat* positiondetected[16];
+    simxInt indexesRobot[2];
+    simxFloat* positionAbsoluteObstacles[8];
+    simxInt* indexesObstacles[8];
     for(int i=0;i<8;i++){
-        simxFloat newPos[2];
-        positiondetected[i] = newPos;
+        positionAbsoluteObstacles[i] = new simxFloat[2];
+        indexesObstacles[i] = new simxInt[2];
     }
     int id;
     if (id = vrep->connect() ==-1){
@@ -40,23 +86,30 @@ int main(int argc, char *argv[])
     }
 
     robot = new Robot(id, "Pioneer_p3dx");
-
+    std::cout<< ambiente.size()<<"gello"<<std::endl;
     for (int i=0; i<3000; ++i)
     {
         //std::cout << "Here we go... " << i << std::endl;
-        robot->updateInfo();
-        std::cout << "pos : "<< robot->robotPosition[0]<< ","<< robot->robotPosition[1]<< ","<< robot->robotPosition[2]<< std::endl;
-        coordinatesToMatrixIndex(robot->robotPosition,indexes);
-        std::cout<<"IGUAL "<<indexes[0]<<","<<indexes[1]<<std::endl;
-        robot->detectedPosition(positiondetected);
-        /*
+
+        std::cout<<"ok"<<std::endl;
+        robot->update();
+        coordinatesToMatrixIndex(robot->robotPosition,indexesRobot,STEP);
+        robot->detectedPosition(positionAbsoluteObstacles);
+
         for(int j=0;j<8;j++){
-           std::cout<<"sensor"<<j<<" seen obstacle, x = "<<positiondetected[j][0]<<" y = "<<positiondetected[j][1]<<std::endl;
-        }*/
+            coordinatesToMatrixIndex(positionAbsoluteObstacles[j],indexesObstacles[j],STEP);
+           //std::cout<<"sensor"<<j<<" seen obstacle, x = "<<positionAbsoluteObstacles[j][0]<<" y = "<<positionAbsoluteObstacles[j][1]<<std::endl;
+           //std::cout<<"sensor"<<j<<" index, x = "<<indexesObstacles[j][0]<<" y = "<<indexesObstacles[j][1]<<std::endl;
+        }
+        updateMatrix(&ambiente,indexesRobot,indexesObstacles,numberLines);
+
         //robot->writeGT();
         //robot->writeSonars();
-        extApi_sleepMs(5000);
+        extApi_sleepMs(50);
     }
+
+    printValarray(&ambiente,numberLines);
+    writeMatrix(&ambiente,numberLines);
     vrep->disconnect();
     exit(0);
 }

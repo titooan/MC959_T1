@@ -3,6 +3,7 @@
 
 #define LOG_FILE    "output.txt"
 #define NUM_SONARS  16
+#define PI 3.14159
 
 #include <fstream>
 #include <stdio.h>
