@@ -2,6 +2,10 @@
 #include <iostream>
 
 simxFloat sensorAngle[8] = {PI/4,5/18*PI,PI/6,PI/18,-PI/18,-PI/6,-(5/18)*PI,-PI/4};
+int start = 1;
+int objectRight, objectLeft = 0;
+int turnRight = 1; // 0 pra vira esquerda e 1 pra direita
+int timeInCircle = 0;
 Robot::Robot(int clientID, const char* name) {
 
     FILE *data =  fopen("gt.txt", "wt");
@@ -132,20 +136,18 @@ void Robot::updateInfo() {
 void Robot::update() {
 
     float vRight,vLeft;
-    if (frenteLivre()) {
+    if (blockedFront()) {
+        std::cout << "--> FRENTE BLOQUEADA"<< std::endl;
+        vRight = 0.5;
+        vLeft = -0.5;
+    } else {
         std::cout << "--> FRENTE LIVRE"<< std::endl;
         vRight = 2;
         vLeft = 2;
     }
-    else {
 
-        std::cout << "--> FRENTE BLOQUEADA"<< std::endl;
-        vRight = 0.5;
-        vLeft = -0.5;
-    }
-
+//    move(20,-10);
     move(vRight,vLeft);
-    //move(vRight,vLeft);
 
 
 //    simxSetJointTargetVelocity(clientID, motorHandle[0], velocity, simx_opmode_streaming);
@@ -194,8 +196,85 @@ void Robot::update() {
 
 
 }
+int Robot::blockedFront() {
+    return ((sonarReadings[2]!=-1 && sonarReadings[2]<0.3) || sonarReadings[3]!=-1 || sonarReadings[4]!=-1 || (sonarReadings[5]!=-1 && sonarReadings[5]<0.3));
+}
+
+int Robot::blockedRight() {
+    turnRight = 1;
+    return ((sonarReadings[6]!=-1 && sonarReadings[6]<0.3) || sonarReadings[7]!=-1 || sonarReadings[8]!=-1 || (sonarReadings[9]!=-1 && sonarReadings[9]<0.3));
+}
+
+int Robot::blockedLeft() {
+    turnRight = 0;
+    return ((sonarReadings[14]!=-1 && sonarReadings[14]<0.3) || sonarReadings[15]!=-1 || sonarReadings[0]!=-1 || (sonarReadings[1]!=-1 && sonarReadings[1]<0.3));
+}
+
+//int Robot::blockedLeft() {
+//    return ((sonarReadings[15]!=-1 && sonarReadings[15]<0.75) || (sonarReadings[0]!=-1 && sonarReadings[0]<0.75));
+//}
+
+void Robot::moveForward() {
+    timeInCircle = 0;
+    float vRight,vLeft;
+    if (blockedFront()) {
+        std::cout << "--> FRENTE BLOQUEADA"<< std::endl;
+        vRight = -1;
+        vLeft = 1;
+    } else {
+        std::cout << "--> FRENTE LIVRE"<< std::endl;
+        vRight = 5;
+        vLeft = 5;
+    }
+    move(vLeft,vRight);
+}
+
+void Robot::moveInCircle() {
+    float vRight,vLeft;
+    if (blockedFront()) {
+        std::cout << "--> CIRCULANDO FRENTE BLOQUEADA"<< std::endl;
+        vRight = -2;
+        vLeft = 2;
+    } else {
+        std::cout << "--> CIRCULANDO FRENTE LIVRE"<< std::endl;
+        if (turnRight) {
+            std::cout << "--> CIRCULANDO --> turnRight"<< std::endl;
+            vRight = 1.5;
+            vLeft = 3;
+        } else {
+            std::cout << "--> CIRCULANDO --> turn left!"<< std::endl;
+            vRight = 3;
+            vLeft = 1.5;
+        }
+
+        timeInCircle++;
+    }
+    move(vLeft,vRight);
+}
 
 
+void Robot::updatePosition() {
+    objectRight = blockedRight();
+    objectLeft = blockedLeft();
+
+    if (start) {
+        std::cout << "--> TO PROCURANDOO A PAREDE..."<< std::endl;
+        moveForward();
+        if (objectRight || objectLeft)
+            start = 0;
+    } else {
+        if (objectRight || objectLeft) {
+            std::cout << "--> Paredinha aqui do lado..."<< std::endl;
+            moveForward();
+        } else {
+            std::cout << "--> CADE A PAREDE??"<< std::endl;
+            moveInCircle();
+            if (timeInCircle > 2000)
+                start = 1;
+        }
+    }
+
+}
 
 void Robot::writeGT() {
     /* write data to file */

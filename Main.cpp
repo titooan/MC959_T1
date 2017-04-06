@@ -125,10 +125,12 @@ int main(int argc, char *argv[])
         //std::cout << "Here we go... " << i << std::endl;
 
         std::cout<<"ok"<<std::endl;
-        robot->update();
+        robot->updateInfo();
+
+        //robot->update();
         coordinatesToMatrixIndex(robot->robotPosition,indexesRobot,STEP);
         robot->detectedPosition(positionAbsoluteObstacles);
-
+        robot->updatePosition();
         for(int j=0;j<8;j++){
             coordinatesToMatrixIndex(positionAbsoluteObstacles[j],indexesObstacles[j],STEP);
            //std::cout<<"sensor"<<j<<" seen obstacle, x = "<<positionAbsoluteObstacles[j][0]<<" y = "<<positionAbsoluteObstacles[j][1]<<std::endl;

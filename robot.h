@@ -13,7 +13,6 @@ extern "C" {
    #include "extApi.h"
    #include "v_repLib.h"
 }
-
 class Robot
 {
 public:
@@ -26,7 +25,12 @@ public:
     void changeCoordinateToOrigin(float *localFrame, float *transformedFrame);
     void detectedPosition(simxFloat** position);
     void move(float vLeft, float vRight);
-
+    int blockedFront();
+    int blockedRight();
+    int blockedLeft();
+    void moveForward();
+    void updatePosition();
+    void moveInCircle();
     int frenteLivre();
 
     int clientID;

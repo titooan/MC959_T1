@@ -9,7 +9,7 @@ def main():
 	csv[csv == -1] = 0
 	csv[csv == 1] = 255
 	toto = csv.astype(np.uint8)
-	misc.imsave('ambiente10.png', toto)
+	misc.imsave('ambiente11.png', toto)
 
 if __name__ == "__main__":
     main()
