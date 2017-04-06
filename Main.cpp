@@ -12,6 +12,9 @@ extern "C" {
     #include "v_repLib.h"
 }
 
+#include "CImg.h"
+using namespace cimg_library;
+
 void writeMatrix(std::valarray<int>* va, int num) {
     /* write data to file */
     /* file format: robotPosition[x] robotPosition[y] robotPosition[z] robotLastPosition[x] robotLastPosition[y] robotLastPosition[z]
@@ -66,8 +69,38 @@ void updateMatrix(std::valarray<int>* ambiente,simxInt* posRobot,simxInt** index
     }
 }
 
+void showMatrixExample(){
+    int numberLines = (SIZE_AMBIENTE/STEP);
+
+    CImg<double> matrix(200,200, 1, 1, -1);
+    //matrix.fill(255);
+    for(int x=2; x<55; x++){
+        for(int y=40; y<100; y++){
+            matrix.atXY(x,y) = -1;
+        }
+    }
+
+    for(int x=70; x<120; x++){
+        for(int y=120; y<150; y++){
+            matrix.atXY(x,y) = 1;
+        }
+    }
+
+    for(int x=180; x<200; x++){
+        for(int y=0; y<150; y++){
+            matrix.atXY(x,y) = 0;
+        }
+    }
+
+    matrix.display("My matrix");
+    matrix.save("test.bmp");
+}
+
 int main(int argc, char *argv[])
 {
+
+    //showMatrixExample();
+
     int numberLines = (SIZE_AMBIENTE/STEP);
 
     std::valarray<int> ambiente(-1,numberLines*numberLines);
