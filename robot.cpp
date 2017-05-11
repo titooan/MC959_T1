@@ -99,7 +99,7 @@ void Robot::detectedPosition(simxFloat** position){
     }
 }
 void Robot::updateInfo() {
-    multiplyMatrix();
+//    multiplyMatrix();
 
     /* Update sonars */
     for(int i = 0; i < NUM_SONARS; i++)

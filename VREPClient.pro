@@ -8,10 +8,10 @@ win32{
     PATH = "C:\Program Files (x86)\V-REP3\V-REP_PRO_EDU\programming"
 }
 macx{
-    PATH = /home/hugo/workspace/MC959/V_REP/programming
+    PATH = /home/xubnto/UNICAMP/MC959/V-REP_PRO_EDU_V3_3_2_64_Linux/programming
 }
 unix{
-    PATH = /home/hugo/workspace/MC959/V_REP/programming
+    PATH = /home/xubnto/UNICAMP/MC959/V-REP_PRO_EDU_V3_3_2_64_Linux/programming
 }
 
 
