@@ -9,13 +9,17 @@
 #include <stdio.h>
 #include <math.h>
 
+#include <Eigen/Dense>
+using Eigen::MatrixXd;
+
+
 extern "C" {
    #include "extApi.h"
    #include "v_repLib.h"
 }
 class Robot
 {
-public:
+public:    
     Robot(int clientID,const char* name);
     void update();
     void printPosition();
@@ -50,6 +54,11 @@ public:
     float sonarReadings[NUM_SONARS];
 
     void multiplyMatrix();
+    MatrixXd translationMatrix(int dx, int dy);
+    MatrixXd rotationMatrix(double alfa);
+
+    const int R = 10;
+    const int L = 20;
 
 };
 

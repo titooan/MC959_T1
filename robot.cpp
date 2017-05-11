@@ -1,5 +1,19 @@
 #include "robot.h"
 #include <iostream>
+#include <Eigen/Dense>
+using Eigen::MatrixXd;
+
+//    MatrixXd m(2,2);
+//    m(0,0) = 3;
+//    m(1,0) = 2.5;
+//    m(0,1) = -1;
+//    m(1,1) = m(1,0) + m(0,1);
+//    std::cout << "matrix :"<< std::endl << m << std::endl;
+
+MatrixXd coords(3,1);   // [x; y; 1]
+MatrixXd pose(1,3);     // [x,y,teta]
+
+MatrixXd velocity(3,1); // [Vx, Vy, w]
 
 simxFloat sensorAngle[8] = {PI/4,5/18*PI,PI/6,PI/18,-PI/18,-PI/6,-(5/18)*PI,-PI/4};
 int start = 1;
@@ -7,15 +21,34 @@ int objectRight, objectLeft = 0;
 int turnRight = 1; // 0 pra vira esquerda e 1 pra direita
 int timeInCircle = 0;
 
-const int rowsA = 3;
-const int colsA = 3;
-const int rowsB = 3;
-const int colsB = 3;
-int a[rowsA][colsA];
-int b[rowsB][colsB];
-int mult[rowsA][colsB];
+
+
+MatrixXd Robot::translationMatrix(int dx, int dy) {
+    MatrixXd t(3,3);
+    t << 1, 0, dx, 0, 1, dy, 0, 0, 1;
+    std::cout << "translation matrix: \n" << t << std::endl;
+    return t;
+}
+
+// alfa em radianos!!!
+MatrixXd Robot::rotationMatrix(double alfa) {
+    MatrixXd r(3,3);
+    r << cos(alfa), -sin(alfa), 0, sin(alfa), cos(alfa), 0, 0, 0, 1;
+    std::cout << "rotation matrix:\n" << r << std::endl;
+    return r;
+}
+
+
+
+
 
 Robot::Robot(int clientID, const char* name) {
+    pose  << 0, 0, 0;
+    coords << 0, 0, 1;
+//    std::cout << pose << std::endl << coords << std::endl;
+
+    translationMatrix(-2,4);
+    rotationMatrix(-1.57);
 
     FILE *data =  fopen("gt.txt", "wt");
     if (data!=NULL)
@@ -100,6 +133,8 @@ void Robot::detectedPosition(simxFloat** position){
 }
 void Robot::updateInfo() {
 //    multiplyMatrix();
+    std::cout << "leftMotor: " << simxGetObjectHandle(clientID, "Pioneer_p3dx_leftMotor",&motorHandle[0],simx_opmode_oneshot_wait) << std::endl;
+    std::cout << simxGetJointPosition(clientID,motorHandle[0], &encoder[0],simx_opmode_streaming) << std::endl;
 
     /* Update sonars */
     for(int i = 0; i < NUM_SONARS; i++)
@@ -348,41 +383,41 @@ void Robot::changeCoordinateToOrigin(float *localFrame, float *transformedFrame)
 }
 
 
-void Robot::multiplyMatrix() {
-    int i,j,k;
-    for(i = 0; i < rowsA; ++i)
-        for(j = 0; j < colsA; ++j)
-        {
-//            if (i==j)
-                a[i][j] = 1;
-//            else
-//                a[i][j] = 0;
-        }
+//void Robot::multiplyMatrix() {
+//    int i,j,k;
+//    for(i = 0; i < rowsA; ++i)
+//        for(j = 0; j < colsA; ++j)
+//        {
+////            if (i==j)
+//                a[i][j] = 1;
+////            else
+////                a[i][j] = 0;
+//        }
 
-    for(i = 0; i < rowsB; ++i)
-        for(j = 0; j < colsB; ++j)
-        {
-            b[i][j] = 1;
-        }
+//    for(i = 0; i < rowsB; ++i)
+//        for(j = 0; j < colsB; ++j)
+//        {
+//            b[i][j] = 1;
+//        }
 
-    for(i = 0; i < rowsA; ++i)
-        for(j = 0; j < colsB; ++j)
-        {
-            mult[i][j] = 0;
-        }
+//    for(i = 0; i < rowsA; ++i)
+//        for(j = 0; j < colsB; ++j)
+//        {
+//            mult[i][j] = 0;
+//        }
 
-// Multiplying matrix a and b and storing in array mult.
-    for(i = 0; i < rowsA; ++i) {
-        for(j = 0; j < colsB; ++j) {
-            for(k = 0; k < colsA; ++k)
-            {
-                mult[i][j] += a[i][k] * b[k][j];
-            }
-            std::cout << "[" << mult[i][j] << "]   ";
-        }
-        std::cout << std::endl;
-    }
-}
+//// Multiplying matrix a and b and storing in array mult.
+//    for(i = 0; i < rowsA; ++i) {
+//        for(j = 0; j < colsB; ++j) {
+//            for(k = 0; k < colsA; ++k)
+//            {
+//                mult[i][j] += a[i][k] * b[k][j];
+//            }
+//            std::cout << "[" << mult[i][j] << "]   ";
+//        }
+//        std::cout << std::endl;
+//    }
+//}
 
 //Acelerômetro
 //simxReadForceSensor(clientID,Acelerometro,NULL,Forca,NULL,simx_opmode_streaming);
