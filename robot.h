@@ -46,6 +46,8 @@ public:
     simxFloat encoder[2] = {0,0};
     simxFloat lastEncoder[2] = {0,0};
 
+    float angularVelocity[2] = {0,0};
+
     /* Robot Position  */
     simxFloat robotPosition[3] = {0,0,0};                    // current robot position
     simxFloat robotOrientation[3] = {0,0,0};                 // current robot orientation
@@ -57,8 +59,8 @@ public:
     MatrixXd translationMatrix(int dx, int dy);
     MatrixXd rotationMatrix(double alfa);
 
-    const int R = 10;
-    const int L = 20;
+    const int R = 10;       // raio da roda com valor aleatorio de 10
+    const int L = 20;       // distancia entre as rodas valor aleatorio 20
 
 };
 

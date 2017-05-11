@@ -64,7 +64,6 @@ void updateMatrix(std::valarray<int>* ambiente,simxInt* posRobot,simxInt** index
     //std::cout<< "numberLine "<<size<<std::endl;
 
 
-    std::cout<< posRobot[0]*size+posRobot[1]<<std::endl;
     (*ambiente)[posRobot[0]*size+posRobot[1]] = 0;
     for(int i =0;i<8;i++){
         if(indexesObstacles[i][0] >0 && indexesObstacles[i][1]>0)
@@ -152,7 +151,7 @@ int main(int argc, char *argv[])
 
         //robot->writeGT();
         //robot->writeSonars();
-        extApi_sleepMs(50);
+        extApi_sleepMs(55);
     }
 
     printValarray(&ambiente,numberLines);

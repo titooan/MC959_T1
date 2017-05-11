@@ -3,13 +3,6 @@
 #include <Eigen/Dense>
 using Eigen::MatrixXd;
 
-//    MatrixXd m(2,2);
-//    m(0,0) = 3;
-//    m(1,0) = 2.5;
-//    m(0,1) = -1;
-//    m(1,1) = m(1,0) + m(0,1);
-//    std::cout << "matrix :"<< std::endl << m << std::endl;
-
 MatrixXd coords(3,1);   // [x; y; 1]
 MatrixXd pose(1,3);     // [x,y,teta]
 
@@ -132,10 +125,10 @@ void Robot::detectedPosition(simxFloat** position){
     }
 }
 void Robot::updateInfo() {
-//    multiplyMatrix();
-    std::cout << "leftMotor: " << simxGetObjectHandle(clientID, "Pioneer_p3dx_leftMotor",&motorHandle[0],simx_opmode_oneshot_wait) << std::endl;
-    std::cout << simxGetJointPosition(clientID,motorHandle[0], &encoder[0],simx_opmode_streaming) << std::endl;
-
+//    std::cout << "leftMotor: " << motorHandle[0] << std::endl;
+//    std::cout << "joint: " << encoder[0] << std::endl;
+//    std::cout << "rightMotor: " << motorHandle[1] << std::endl;
+//    std::cout << "joint: " << encoder[1] << std::endl;
     /* Update sonars */
     for(int i = 0; i < NUM_SONARS; i++)
     {
@@ -166,19 +159,27 @@ void Robot::updateInfo() {
     /* Get the robot current position and orientation */
     simxGetObjectPosition(clientID,handle,-1,robotPosition,simx_opmode_streaming);
     simxGetObjectOrientation(clientID,handle,-1,robotOrientation,simx_opmode_streaming);
-/*
+
+
+
+    /* Get the encoder data */
+    if (simxGetJointPosition(clientID,motorHandle[0], &encoder[0],simx_opmode_streaming) == simx_return_ok)
+//        std::cout << "ok left enconder = "<< encoder[0] << std::endl;  // left
+    if (simxGetJointPosition(clientID,motorHandle[1], &encoder[1],simx_opmode_streaming) == simx_return_ok)
+//        std::cout << "ok right enconder  = "<< encoder[1] << std::endl;  // right
+
+    angularVelocity[0] = fmod(encoder[0] - lastEncoder[0],2*PI);
+    angularVelocity[1] = fmod(encoder[1] - lastEncoder[1],2*PI);
+
+    std::cout << "left angular = " << angularVelocity[0] << std::endl;
+    std::cout << "right angular = " << angularVelocity[1] << std::endl;
+
     lastEncoder[0] = encoder[0];
     lastEncoder[1] = encoder[1];
 
-    /* Get the encoder data *//*
-    if (simxGetJointPosition(clientID,motorHandle[0], &encoder[0],simx_opmode_streaming) == simx_return_ok)
-        std::cout << "ok left enconder"<< encoder[0] << std::endl;  // left
-    if (simxGetJointPosition(clientID,motorHandle[1], &encoder[1],simx_opmode_streaming) == simx_return_ok)
-        std::cout << "ok right enconder"<< encoder[1] << std::endl;  // right
-*/
-
-
 }
+
+
 void Robot::update() {
 
 
@@ -189,8 +190,8 @@ void Robot::update() {
         vLeft = -0.5;
     } else {
 //        std::cout << "--> FRENTE LIVRE"<< std::endl;
-        vRight = 2;
-        vLeft = 2;
+        vRight = 3;
+        vLeft = 3;
     }
 
 //    move(20,-10);
@@ -270,8 +271,8 @@ void Robot::moveForward() {
         vLeft = 1;
     } else {
 //        std::cout << "--> FRENTE LIVRE"<< std::endl;
-        vRight = 5;
-        vLeft = 5;
+        vRight = 2;
+        vLeft = 2;
     }
     move(vLeft,vRight);
 }
