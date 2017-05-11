@@ -49,6 +49,8 @@ public:
     simxFloat robotLastPosition[3] = {0,0,0};                // last robot position
     float sonarReadings[NUM_SONARS];
 
+    void multiplyMatrix();
+
 };
 
 #endif // ROBOT_H

@@ -121,10 +121,10 @@ int main(int argc, char *argv[])
     //std::cout<< ambiente.size()<<"gello"<<std::endl;
     for (int i=0; i<9000; ++i)
     {
-        std::cout<<"still running..."<<std::endl;
+//        std::cout<<"still running..."<<std::endl;
         //std::cout << "Here we go... " << i << std::endl;
 
-        std::cout<<"ok"<<std::endl;
+//        std::cout<<"ok"<<std::endl;
         robot->updateInfo();
 
         //robot->update();

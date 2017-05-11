@@ -6,6 +6,15 @@ int start = 1;
 int objectRight, objectLeft = 0;
 int turnRight = 1; // 0 pra vira esquerda e 1 pra direita
 int timeInCircle = 0;
+
+const int rowsA = 3;
+const int colsA = 3;
+const int rowsB = 3;
+const int colsB = 3;
+int a[rowsA][colsA];
+int b[rowsB][colsB];
+int mult[rowsA][colsB];
+
 Robot::Robot(int clientID, const char* name) {
 
     FILE *data =  fopen("gt.txt", "wt");
@@ -68,6 +77,7 @@ Robot::Robot(int clientID, const char* name) {
 int Robot::frenteLivre() {
     return ((sonarReadings[3]==-1 || sonarReadings[3]>0.75) && (sonarReadings[4]==-1 || sonarReadings[4]>0.75));
 }
+
 void Robot::detectedPosition(simxFloat** position){
     int i =0;
     simxFloat posX,posY,angle,robotRay;
@@ -89,6 +99,7 @@ void Robot::detectedPosition(simxFloat** position){
     }
 }
 void Robot::updateInfo() {
+    multiplyMatrix();
 
     /* Update sonars */
     for(int i = 0; i < NUM_SONARS; i++)
@@ -135,13 +146,14 @@ void Robot::updateInfo() {
 }
 void Robot::update() {
 
+
     float vRight,vLeft;
     if (blockedFront()) {
-        std::cout << "--> FRENTE BLOQUEADA"<< std::endl;
+//        std::cout << "--> FRENTE BLOQUEADA"<< std::endl;
         vRight = 0.5;
         vLeft = -0.5;
     } else {
-        std::cout << "--> FRENTE LIVRE"<< std::endl;
+//        std::cout << "--> FRENTE LIVRE"<< std::endl;
         vRight = 2;
         vLeft = 2;
     }
@@ -218,11 +230,11 @@ void Robot::moveForward() {
     timeInCircle = 0;
     float vRight,vLeft;
     if (blockedFront()) {
-        std::cout << "--> FRENTE BLOQUEADA"<< std::endl;
+//        std::cout << "--> FRENTE BLOQUEADA"<< std::endl;
         vRight = -1;
         vLeft = 1;
     } else {
-        std::cout << "--> FRENTE LIVRE"<< std::endl;
+//        std::cout << "--> FRENTE LIVRE"<< std::endl;
         vRight = 5;
         vLeft = 5;
     }
@@ -232,17 +244,17 @@ void Robot::moveForward() {
 void Robot::moveInCircle() {
     float vRight,vLeft;
     if (blockedFront()) {
-        std::cout << "--> CIRCULANDO FRENTE BLOQUEADA"<< std::endl;
+//        std::cout << "--> CIRCULANDO FRENTE BLOQUEADA"<< std::endl;
         vRight = -2;
         vLeft = 2;
     } else {
-        std::cout << "--> CIRCULANDO FRENTE LIVRE"<< std::endl;
+//        std::cout << "--> CIRCULANDO FRENTE LIVRE"<< std::endl;
         if (turnRight) {
-            std::cout << "--> CIRCULANDO --> turnRight"<< std::endl;
+//            std::cout << "--> CIRCULANDO --> turnRight"<< std::endl;
             vRight = 1.5;
             vLeft = 3;
         } else {
-            std::cout << "--> CIRCULANDO --> turn left!"<< std::endl;
+//            std::cout << "--> CIRCULANDO --> turn left!"<< std::endl;
             vRight = 3;
             vLeft = 1.5;
         }
@@ -258,16 +270,16 @@ void Robot::updatePosition() {
     objectLeft = blockedLeft();
 
     if (start) {
-        std::cout << "--> TO PROCURANDOO A PAREDE..."<< std::endl;
+//        std::cout << "--> TO PROCURANDOO A PAREDE..."<< std::endl;
         moveForward();
         if (objectRight || objectLeft)
             start = 0;
     } else {
         if (objectRight || objectLeft) {
-            std::cout << "--> Paredinha aqui do lado..."<< std::endl;
+//            std::cout << "--> Paredinha aqui do lado..."<< std::endl;
             moveForward();
         } else {
-            std::cout << "--> CADE A PAREDE??"<< std::endl;
+//            std::cout << "--> CADE A PAREDE??"<< std::endl;
             moveInCircle();
             if (timeInCircle > 2000)
                 start = 1;
@@ -333,6 +345,43 @@ void Robot::move(float vLeft, float vRight) {
 
 void Robot::changeCoordinateToOrigin(float *localFrame, float *transformedFrame) {
 
+}
+
+
+void Robot::multiplyMatrix() {
+    int i,j,k;
+    for(i = 0; i < rowsA; ++i)
+        for(j = 0; j < colsA; ++j)
+        {
+//            if (i==j)
+                a[i][j] = 1;
+//            else
+//                a[i][j] = 0;
+        }
+
+    for(i = 0; i < rowsB; ++i)
+        for(j = 0; j < colsB; ++j)
+        {
+            b[i][j] = 1;
+        }
+
+    for(i = 0; i < rowsA; ++i)
+        for(j = 0; j < colsB; ++j)
+        {
+            mult[i][j] = 0;
+        }
+
+// Multiplying matrix a and b and storing in array mult.
+    for(i = 0; i < rowsA; ++i) {
+        for(j = 0; j < colsB; ++j) {
+            for(k = 0; k < colsA; ++k)
+            {
+                mult[i][j] += a[i][k] * b[k][j];
+            }
+            std::cout << "[" << mult[i][j] << "]   ";
+        }
+        std::cout << std::endl;
+    }
 }
 
 //Acelerômetro
