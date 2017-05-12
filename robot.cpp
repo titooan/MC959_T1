@@ -34,7 +34,6 @@ MatrixXd Robot::rotationMatrix(double alfa) {
 
 
 
-
 Robot::Robot(int clientID, const char* name) {
     pose  << 0, 0, 0;
     coords << 0, 0, 1;
@@ -163,10 +162,16 @@ void Robot::updateInfo() {
 
 
     /* Get the encoder data */
-    if (simxGetJointPosition(clientID,motorHandle[0], &encoder[0],simx_opmode_streaming) == simx_return_ok)
+    simxGetJointPosition(clientID,motorHandle[0], &encoder[0],simx_opmode_streaming);
 //        std::cout << "ok left enconder = "<< encoder[0] << std::endl;  // left
-    if (simxGetJointPosition(clientID,motorHandle[1], &encoder[1],simx_opmode_streaming) == simx_return_ok)
+    simxGetJointPosition(clientID,motorHandle[1], &encoder[1],simx_opmode_streaming);
 //        std::cout << "ok right enconder  = "<< encoder[1] << std::endl;  // right
+
+    //*****************************************************
+    // ainda nao acabei, nao deu tempo, mas a ideia é essa
+//    if (vLeft > 0)
+//        angularVelocity[0] = (encoder[0]>lastEncoder[0] ? encoder[0]-lastEncoder[0] : 360-lastEncoder[0]+encoder[0]);
+    //*****************************************************
 
     angularVelocity[0] = fmod(encoder[0] - lastEncoder[0],2*PI);
     angularVelocity[1] = fmod(encoder[1] - lastEncoder[1],2*PI);
