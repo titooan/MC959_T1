@@ -169,12 +169,18 @@ void Robot::updateInfo() {
 
     //*****************************************************
     // ainda nao acabei, nao deu tempo, mas a ideia é essa
-//    if (vLeft > 0)
-//        angularVelocity[0] = (encoder[0]>lastEncoder[0] ? encoder[0]-lastEncoder[0] : 360-lastEncoder[0]+encoder[0]);
+    if (vLeft > 0)
+        angularVelocity[0] = (encoder[0]>lastEncoder[0] ? encoder[0]-lastEncoder[0] : 360-lastEncoder[0]+encoder[0]);
+    else
+        angularVelocity[0] = (encoder[0]<lastEncoder[0] ? encoder[0]-lastEncoder[0] : encoder[0]-lastEncoder[0]-360);
+
+
+    if (vRight > 0)
+        angularVelocity[1] = (encoder[1]>lastEncoder[1] ? encoder[1]-lastEncoder[1] : 360-lastEncoder[1]+encoder[1]);
+    else
+        angularVelocity[1] = (encoder[1]<lastEncoder[1] ? encoder[1]-lastEncoder[1] : encoder[1]-lastEncoder[1]-360);
     //*****************************************************
 
-    angularVelocity[0] = fmod(encoder[0] - lastEncoder[0],2*PI);
-    angularVelocity[1] = fmod(encoder[1] - lastEncoder[1],2*PI);
 
     std::cout << "left angular = " << angularVelocity[0] << std::endl;
     std::cout << "right angular = " << angularVelocity[1] << std::endl;
