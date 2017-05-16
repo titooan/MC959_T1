@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
 
         //robot->writeGT();
         //robot->writeSonars();
-        extApi_sleepMs(55);
+        extApi_sleepMs(50);
     }
 
     printValarray(&ambiente,numberLines);

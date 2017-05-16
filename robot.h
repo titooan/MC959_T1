@@ -59,8 +59,8 @@ public:
     MatrixXd translationMatrix(int dx, int dy);
     MatrixXd rotationMatrix(double alfa);
 
-    const int R = 10;       // raio da roda com valor aleatorio de 10
-    const int L = 20;       // distancia entre as rodas valor aleatorio 20
+    const float R = 0.097;      // raio da roda em cm
+    const float L = 0.19;       // metade da distancia entre as rodas em cm
 
 };
 

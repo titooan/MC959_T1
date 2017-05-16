@@ -13,6 +13,9 @@ int start = 1;
 int objectRight, objectLeft = 0;
 int turnRight = 1; // 0 pra vira esquerda e 1 pra direita
 int timeInCircle = 0;
+float leftVelocity, rightVelocity = 0;
+
+float globalX = -2.97;
 
 
 
@@ -169,25 +172,34 @@ void Robot::updateInfo() {
 
     //*****************************************************
     // ainda nao acabei, nao deu tempo, mas a ideia é essa
-    if (vLeft > 0)
-        angularVelocity[0] = (encoder[0]>lastEncoder[0] ? encoder[0]-lastEncoder[0] : 360-lastEncoder[0]+encoder[0]);
+    if (leftVelocity >= 0)
+        angularVelocity[0] = (encoder[0]>=lastEncoder[0] ? encoder[0]-lastEncoder[0] : 2*PI-lastEncoder[0]+encoder[0]);
     else
-        angularVelocity[0] = (encoder[0]<lastEncoder[0] ? encoder[0]-lastEncoder[0] : encoder[0]-lastEncoder[0]-360);
+        angularVelocity[0] = (encoder[0]<=lastEncoder[0] ? encoder[0]-lastEncoder[0] : encoder[0]-lastEncoder[0]-2*PI);
 
 
-    if (vRight > 0)
-        angularVelocity[1] = (encoder[1]>lastEncoder[1] ? encoder[1]-lastEncoder[1] : 360-lastEncoder[1]+encoder[1]);
+    if (rightVelocity >= 0)
+        angularVelocity[1] = (encoder[1]>=lastEncoder[1] ? encoder[1]-lastEncoder[1] : 2*PI-lastEncoder[1]+encoder[1]);
     else
-        angularVelocity[1] = (encoder[1]<lastEncoder[1] ? encoder[1]-lastEncoder[1] : encoder[1]-lastEncoder[1]-360);
+        angularVelocity[1] = (encoder[1]<=lastEncoder[1] ? encoder[1]-lastEncoder[1] : encoder[1]-lastEncoder[1]-2*PI);
     //*****************************************************
 
+//    angularVelocity[0] /= 50;   // rad/ms
+//    angularVelocity[1] /= 50;
 
+    std::cout << "left enconder - lastEncoder = "<< encoder[0] << " - " << lastEncoder[0] << std::endl;
     std::cout << "left angular = " << angularVelocity[0] << std::endl;
     std::cout << "right angular = " << angularVelocity[1] << std::endl;
 
     lastEncoder[0] = encoder[0];
     lastEncoder[1] = encoder[1];
 
+    if (abs(angularVelocity[0]) < 2*PI-1) {
+
+        globalX += (angularVelocity[0]+angularVelocity[1])*R/2;     // (rad/ms)*m
+
+        std::cout << "globalX = " << globalX << "\t groundTruthX = " << robotPosition[0] << "   " << (angularVelocity[0]+angularVelocity[1])*R/2 << std::endl;
+    }
 }
 
 
@@ -387,6 +399,8 @@ void Robot::printPosition() {
 void Robot::move(float vLeft, float vRight) {
     simxSetJointTargetVelocity(clientID, motorHandle[0], vLeft, simx_opmode_streaming);
     simxSetJointTargetVelocity(clientID, motorHandle[1], vRight, simx_opmode_streaming);
+    leftVelocity = vLeft;
+    rightVelocity = vRight;
 }
 
 
