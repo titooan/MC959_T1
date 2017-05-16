@@ -3,7 +3,7 @@
 
 #define LOG_FILE    "output.txt"
 #define NUM_SONARS  16
-#define PI 3.14159
+#define PI 3.14159265359
 
 #include <fstream>
 #include <stdio.h>
@@ -61,7 +61,7 @@ public:
     void updateOdometry();
 
     const float R = 0.097;      // raio da roda em m
-    const float L = 0.19;       // metade da distancia entre as 2 rodas em m
+    const float L = 0.381;       // distancia entre as 2 rodas em m
 
 };
 

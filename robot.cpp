@@ -16,7 +16,7 @@ int timeInCircle = 0;
 float leftVelocity, rightVelocity = 0;
 
 float xPosOdometry = -2.97;
-float curveRadius = 0;
+float yPosOdometry = -0.0976959;
 float tetaOdometry = 0;
 
 
@@ -172,44 +172,19 @@ void Robot::updateInfo() {
     simxGetJointPosition(clientID,motorHandle[1], &encoder[1],simx_opmode_streaming);
 //        std::cout << "ok right enconder  = "<< encoder[1] << std::endl;  // right
 
-    //*****************************************************
-    // calculo velocidade angular
-//    if (leftVelocity >= 0)
-//        angularVelocity[0] = (encoder[0]>=lastEncoder[0] ? encoder[0]-lastEncoder[0] : 2*PI-lastEncoder[0]+encoder[0]);
-//    else
-//        angularVelocity[0] = (encoder[0]<=lastEncoder[0] ? encoder[0]-lastEncoder[0] : encoder[0]-lastEncoder[0]-2*PI);
-
-
-//    if (rightVelocity >= 0)
-//        angularVelocity[1] = (encoder[1]>=lastEncoder[1] ? encoder[1]-lastEncoder[1] : 2*PI-lastEncoder[1]+encoder[1]);
-//    else
-//        angularVelocity[1] = (encoder[1]<=lastEncoder[1] ? encoder[1]-lastEncoder[1] : encoder[1]-lastEncoder[1]-2*PI);
-    //*****************************************************
     updateOdometry();
-
-//    angularVelocity[0] /= 50;   // rad/ms
-//    angularVelocity[1] /= 50;
-
-//    std::cout << "left enconder - lastEncoder = "<< encoder[0] << " - " << lastEncoder[0] << std::endl;
-//    std::cout << "left angular = " << angularVelocity[0] << std::endl;
-//    std::cout << "right angular = " << angularVelocity[1] << std::endl;
 
     lastEncoder[0] = encoder[0];
     lastEncoder[1] = encoder[1];
-
-//    if (abs(angularVelocity[0]) < 2*PI-1 && abs(angularVelocity[0]) > -2*PI+1 && abs(angularVelocity[1]) < 2*PI-1 && abs(angularVelocity[1]) > -2*PI+1) {
-
-//        xPosOdometry += (angularVelocity[0]+angularVelocity[1])*R/2;     // (rad/ms)*m
-
-//        std::cout << "\t xPosOdometry = " << xPosOdometry << "\t +dx = " << (angularVelocity[0]+angularVelocity[1])*R/2 << std::endl;
-//    }
-
-//    std::cout << " groundTruth [x,y,teta] = [" << robotPosition[0] << "," << robotPosition[1] << "," << robotOrientation[2] << "]" << std::endl;
 }
 
 void Robot::updateOdometry() {
     float dTeta;
     float tetaVelocity;
+    float curveRadius;
+    float dS;
+    float dX;
+    float dY;
 
     //*****************************************************
     // calculo velocidade angular em cada roda
@@ -217,35 +192,39 @@ void Robot::updateOdometry() {
         angularVelocity[0] = (encoder[0]>=lastEncoder[0] ? encoder[0]-lastEncoder[0] : 2*PI-lastEncoder[0]+encoder[0]);
     else
         angularVelocity[0] = (encoder[0]<=lastEncoder[0] ? encoder[0]-lastEncoder[0] : encoder[0]-lastEncoder[0]-2*PI);
+    if (abs(angularVelocity[0]) > 2*PI-1)
+        angularVelocity[0] = 0;
 
 
     if (rightVelocity >= 0)
         angularVelocity[1] = (encoder[1]>=lastEncoder[1] ? encoder[1]-lastEncoder[1] : 2*PI-lastEncoder[1]+encoder[1]);
     else
         angularVelocity[1] = (encoder[1]<=lastEncoder[1] ? encoder[1]-lastEncoder[1] : encoder[1]-lastEncoder[1]-2*PI);
+    if (abs(angularVelocity[1]) > 2*PI-1)
+        angularVelocity[1] = 0;
     //*****************************************************
 
-    if (abs(angularVelocity[0]) < 2*PI-1 && abs(angularVelocity[0]) > -2*PI+1 && abs(angularVelocity[1]) < 2*PI-1 && abs(angularVelocity[1]) > -2*PI+1) {
-        leftVelocity = angularVelocity[0]*R;
-        rightVelocity = angularVelocity[1]*R;
-    }
 
+    leftVelocity = angularVelocity[0]*R;
+    rightVelocity = angularVelocity[1]*R;
 
-    curveRadius = (rightVelocity != leftVelocity ? L*(rightVelocity+leftVelocity)/(rightVelocity-leftVelocity) : 0) ;
+//        curveRadius = (rightVelocity != leftVelocity ? L*(rightVelocity+leftVelocity)/(rightVelocity-leftVelocity) : 0) ;
+//        tetaVelocity = curveRadius*(angularVelocity[1]-angularVelocity[0])/(2*L);
+//        dTeta = tetaVelocity*0.05;
+//    dX = (angularVelocity[0]+angularVelocity[1])*R/2;
+//        dS = 0.05*((angularVelocity[0]+angularVelocity[1])*curveRadius)/2;
 
-//    dTeta = 0.05*(leftVelocity-rightVelocity)/(3.6*L);        //      dTeta = dt*(Vl-Vr))/2l
-
-    tetaVelocity = curveRadius*(angularVelocity[1]-angularVelocity[0])/2*L;
-    dTeta = tetaVelocity*0.05;
-
+    dTeta = (rightVelocity-leftVelocity)/L;
     tetaOdometry += dTeta;
 
+    dS = (leftVelocity+rightVelocity)/2;
+    dX = dS*cos(tetaOdometry+dTeta/2);
+    dY = dS*sin(tetaOdometry+dTeta/2);
 
-    if (abs(angularVelocity[0]) < 2*PI-1 && abs(angularVelocity[0]) > -2*PI+1 && abs(angularVelocity[1]) < 2*PI-1 && abs(angularVelocity[1]) > -2*PI+1) {
-        xPosOdometry += (angularVelocity[0]+angularVelocity[1])*R/2;     // m*(rad/ms)
-        std::cout << "\t xPosOdometry = " << xPosOdometry << " +dx = " << (angularVelocity[0]+angularVelocity[1])*R/2 << " tetaOdometry= " << tetaOdometry << std::endl;
-    }
+    xPosOdometry += dX;
+    yPosOdometry += dY;
 
+    std::cout << " odometry           -->   [" << xPosOdometry << "," << yPosOdometry << "," << tetaOdometry << "]"  << std::endl;
     std::cout << " groundTruth [x,y,teta] = [" << robotPosition[0] << "," << robotPosition[1] << "," << robotOrientation[2] << "]" << std::endl;
 }
 
@@ -447,8 +426,6 @@ void Robot::printPosition() {
 void Robot::move(float vLeft, float vRight) {
     simxSetJointTargetVelocity(clientID, motorHandle[0], vLeft, simx_opmode_streaming);
     simxSetJointTargetVelocity(clientID, motorHandle[1], vRight, simx_opmode_streaming);
-    leftVelocity = vLeft;
-    rightVelocity = vRight;
 }
 
 
