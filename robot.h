@@ -58,9 +58,10 @@ public:
     void multiplyMatrix();
     MatrixXd translationMatrix(int dx, int dy);
     MatrixXd rotationMatrix(double alfa);
+    void updateOdometry();
 
-    const float R = 0.097;      // raio da roda em cm
-    const float L = 0.19;       // metade da distancia entre as rodas em cm
+    const float R = 0.097;      // raio da roda em m
+    const float L = 0.19;       // metade da distancia entre as 2 rodas em m
 
 };
 
