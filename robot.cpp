@@ -19,7 +19,9 @@ float xPosOdometry = -2.97;
 float yPosOdometry = -0.0976959;
 float tetaOdometry = 0;
 float gyroData = 0;
-
+float tetaPlot[5] = {0,0,0,0,0};
+float xPlot[5] = {-2.97,-2.97,-2.97,-2.97,-2.97};
+float yPlot[5] = {-0.0976959,-0.0976959,-0.0976959,-0.0976959,-0.0976959};
 
 
 MatrixXd Robot::translationMatrix(int dx, int dy) {
@@ -183,9 +185,12 @@ void Robot::updateOdometry() {
     float dTeta;
     float tetaVelocity;
     float curveRadius;
+    float deltaTeta;
     float dS;
     float dX;
     float dY;
+    float dXPlot[5];
+    float dYPlot[5];
 
     //*****************************************************
     // calculo velocidade angular em cada roda
@@ -220,11 +225,20 @@ void Robot::updateOdometry() {
     simxGetFloatSignal(clientID,"gyroZ",&gyroData,simx_opmode_streaming);
     std::cout << "gyroData = " << gyroData << "  " << gyroData*0.05 << " // dTeta = " << dTeta << std::endl;
 
-    tetaOdometry += (gyroData*0.05 + dTeta)/2;
-
     dS = (leftVelocity+rightVelocity)/2;
-    dX = dS*cos(tetaOdometry+dTeta/2);
-    dY = dS*sin(tetaOdometry+dTeta/2);
+
+    for (int i=0; i<5; ++i) {
+        tetaPlot[i] += ((1+i)*gyroData*0.05 + dTeta)/(2+i);
+        xPlot[i] += dS*cos(tetaPlot[i]+(((1+i)*gyroData*0.05 + dTeta)/(2+i))/2);
+        yPlot[i] += dS*sin(tetaPlot[i]+(((1+i)*gyroData*0.05 + dTeta)/(2+i))/2);
+    }
+
+    deltaTeta = (leftVelocity*rightVelocity > 0 ? dTeta : (3*gyroData*0.05 + dTeta)/4);//(2.5*gyroData*0.05 + dTeta)/3.5;
+
+    tetaOdometry += deltaTeta;
+
+    dX = dS*cos(tetaOdometry+deltaTeta/2);
+    dY = dS*sin(tetaOdometry+deltaTeta/2);
 
     xPosOdometry += dX;
     yPosOdometry += dY;
@@ -400,6 +414,11 @@ void Robot::writeGT() {
         fprintf(data, "%.2f\t",xPosOdometry);
         fprintf(data, "%.2f\t",yPosOdometry);
         fprintf(data, "%.2f\t",tetaOdometry);
+
+        for (int i=0; i<5; ++i) {
+            fprintf(data, "%.2f\t",xPlot[i]);
+            fprintf(data, "%.2f\t",yPlot[i]);
+        }
 
         fprintf(data, "\n");
         fflush(data);
