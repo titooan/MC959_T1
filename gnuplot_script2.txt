@@ -1,0 +1,3 @@
+set style line 1 lc rgb '#0060ad' pt 1
+
+plot 'gt.txt' using 1:2 title 'gt' with lines, 'gt.txt' using 14:15 title 'algo' with lines,  'gt.txt' using 27:28 title 's1' with points ls 1, 'gt.txt' using 29:30 title 's2' with points ls 1, 'gt.txt' using 31:32 title 's3' with points ls 1, 'gt.txt' using 33:34 title 's4' with points ls 1, 'gt.txt' using 35:36 title 's5' with points ls 1, 'gt.txt' using 37:38 title 's6' with points ls 1, 'gt.txt' using 39:40 title 's7' with points ls 1, 'gt.txt' using 41:42 title 's8' with points ls 1, 'gt.txt' using 43:44 title 's9' with points ls 1, 'gt.txt' using 45:46 title 's10' with points ls 1, 'gt.txt' using 47:48 title 's11' with points ls 1, 'gt.txt' using 49:50 title 's12' with points ls 1
