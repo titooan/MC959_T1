@@ -22,7 +22,7 @@ void writeMatrix(std::valarray<int>* va, int num) {
     /* write data to file */
     /* file format: robotPosition[x] robotPosition[y] robotPosition[z] robotLastPosition[x] robotLastPosition[y] robotLastPosition[z]
      *              encoder[0] encoder[1] lastEncoder[0] lastEncoder[1] */
-    FILE *data =  fopen("/home/hugo/workspace/matrix.txt", "w");
+    FILE *data =  fopen("./matrix.txt", "w");
     if (data!=NULL)
     {
         for (int i=0; i<va->size()/num; i++) {
@@ -149,14 +149,14 @@ int main(int argc, char *argv[])
         }
         updateMatrix(&ambiente,indexesRobot,indexesObstacles,numberLines);
 
-        //robot->writeGT();
-        //robot->writeSonars();
+        robot->writeGT();
+        robot->writeSonars();
         extApi_sleepMs(50);
     }
 
     printValarray(&ambiente,numberLines);
-    writeMatrix(&ambiente,numberLines);
 
+    writeMatrix(&ambiente,numberLines);
     vrep->disconnect();
 
     exit(0);

@@ -18,6 +18,7 @@ float leftVelocity, rightVelocity = 0;
 float xPosOdometry = -2.97;
 float yPosOdometry = -0.0976959;
 float tetaOdometry = 0;
+float gyroData = 0;
 
 
 
@@ -215,7 +216,11 @@ void Robot::updateOdometry() {
 //        dS = 0.05*((angularVelocity[0]+angularVelocity[1])*curveRadius)/2;
 
     dTeta = (rightVelocity-leftVelocity)/L;
-    tetaOdometry += dTeta;
+
+    simxGetFloatSignal(clientID,"gyroZ",&gyroData,simx_opmode_streaming);
+    std::cout << "gyroData = " << gyroData << "  " << gyroData*0.05 << " // dTeta = " << dTeta << std::endl;
+
+    tetaOdometry += (gyroData*0.05 + dTeta)/2;
 
     dS = (leftVelocity+rightVelocity)/2;
     dX = dS*cos(tetaOdometry+dTeta/2);
@@ -391,6 +396,11 @@ void Robot::writeGT() {
             fprintf(data, "%.2f\t",encoder[i]);
         for (int i=0; i<2; ++i)
             fprintf(data, "%.2f\t",lastEncoder[i]);
+
+        fprintf(data, "%.2f\t",xPosOdometry);
+        fprintf(data, "%.2f\t",yPosOdometry);
+        fprintf(data, "%.2f\t",tetaOdometry);
+
         fprintf(data, "\n");
         fflush(data);
         fclose(data);
@@ -398,6 +408,8 @@ void Robot::writeGT() {
       else
         std::cout << "Unable to open file";
 }
+
+
 
 void Robot::writeSonars() {
     /* write data to file */
@@ -426,6 +438,7 @@ void Robot::printPosition() {
 void Robot::move(float vLeft, float vRight) {
     simxSetJointTargetVelocity(clientID, motorHandle[0], vLeft, simx_opmode_streaming);
     simxSetJointTargetVelocity(clientID, motorHandle[1], vRight, simx_opmode_streaming);
+    std::cout << "*****> vLeft = " << vLeft << " angularLeft = " << angularVelocity[0] << " leftVelocity = " << leftVelocity << std::endl;
 }
 
 

@@ -1,0 +1,1 @@
+plot 'test.txt' using 1:2 title 'gt' with lines, 'test.txt' using 14:15 title 'odometry' with lines
