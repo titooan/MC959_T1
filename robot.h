@@ -41,6 +41,12 @@ public:
 
     void avoidObstacles();
 
+    float pid(float distance1, float distance2);
+    float pid2(float distance1, float distance2);
+    void pid();
+    bool obstacleFront();
+
+
     int clientID;
     simxInt handle;                                        // robot handle
     simxFloat velocity[2] = {1,1};                         // wheels' speed
@@ -66,6 +72,9 @@ public:
 
     const float R = 0.097;      // raio da roda em m
     const float L = 0.381;       // distancia entre as 2 rodas em m
+
+    float error_i = 0;
+    float last_error = 0;
 
 };
 

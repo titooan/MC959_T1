@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
         coordinatesToMatrixIndex(robot->robotPosition,indexesRobot,STEP);
         robot->detectedPosition(positionAbsoluteObstacles);
         robot->updatePosition();
-//        robot->avoidObstacles();
+//        robot->pid();
         for(int j=0;j<8;j++){
             coordinatesToMatrixIndex(positionAbsoluteObstacles[j],indexesObstacles[j],STEP);
            //std::cout<<"sensor"<<j<<" seen obstacle, x = "<<positionAbsoluteObstacles[j][0]<<" y = "<<positionAbsoluteObstacles[j][1]<<std::endl;

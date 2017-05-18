@@ -8,7 +8,7 @@ MatrixXd pose(1,3);     // [x,y,teta]
 
 MatrixXd velocity(3,1); // [Vx, Vy, w]
 
-simxFloat sensorAngle[8] = {PI/4,5/18*PI,PI/6,PI/18,-PI/18,-PI/6,-(5/18)*PI,-PI/4};
+float sensorAngle[16] = {PI/2.0,(5.0/18.0)*PI,PI/6.0,PI/18.0,-PI/18.0,-PI/6.0,-(5.0/18.0)*PI,-PI/2.0,-PI/2.0,-(13.0/18.0)*PI,-(5.0/6.0)*PI,-(17.0/18.0)*PI,(17.0/18.0)*PI,(5.0/6.0)*PI,(13.0/18.0)*PI,PI/2.0};
 int start = 1;
 int objectRight, objectLeft = 0;
 int turnRight = 1; // 0 pra vira esquerda e 1 pra direita
@@ -26,6 +26,11 @@ float yPlot[5] = {-0.0976959,-0.0976959,-0.0976959,-0.0976959,-0.0976959};
 
 //MatrixXd destination(2);
 //MatrixXd power(2);          // power to apply on each motor
+
+int stoppedCounter = 0;
+
+const float base_speed = 1.5;
+
 
 
 MatrixXd Robot::translationMatrix(int dx, int dy) {
@@ -288,7 +293,7 @@ void Robot::updateOdometry() {
     dTeta = (rightVelocity-leftVelocity)/L;
 
     simxGetFloatSignal(clientID,"gyroZ",&gyroData,simx_opmode_streaming);
-    std::cout << "gyroData = " << gyroData << "  " << gyroData*0.05 << " // dTeta = " << dTeta << std::endl;
+    std::cout << "gyroData = " << gyroData << "  " << gyroData*0.05 << " // dTeta (rodas) = " << dTeta << std::endl;
 
     dS = (leftVelocity+rightVelocity)/2;
 
@@ -383,6 +388,14 @@ void Robot::update() {
 
 
 }
+
+bool Robot::obstacleFront(){
+    return
+            sonarReadings[4] != -1 && sonarReadings[4] < 0.4
+            ||
+            sonarReadings[3] != -1 && sonarReadings[3] < 0.4;
+}
+
 int Robot::blockedFront() {
     return ((sonarReadings[2]!=-1 && sonarReadings[2]<0.3) || sonarReadings[3]!=-1 || sonarReadings[4]!=-1 || (sonarReadings[5]!=-1 && sonarReadings[5]<0.3));
 }
@@ -400,6 +413,148 @@ int Robot::blockedLeft() {
 //int Robot::blockedLeft() {
 //    return ((sonarReadings[15]!=-1 && sonarReadings[15]<0.75) || (sonarReadings[0]!=-1 && sonarReadings[0]<0.75));
 //}
+
+void Robot::pid(){
+    pid(sonarReadings[8], sonarReadings[7]);
+}
+
+float Robot::pid(float distance1, float distance2){
+    //if no wall detected, move forward until find a wall
+    //when a wall is close, adapt individual wheels speed to start following it
+    //if there is an obstacle in front of me, find a way to avoid it
+
+    if(distance1 == -1 && distance2 == -1 ){
+        error_i = 0;
+        last_error = 0;
+        std::cout << "PID - NO WALL" << std::endl;
+        move(base_speed, base_speed);
+        return base_speed;
+    }
+
+    const float minAcceptedDiff = 0.005;
+    const float maxDistToWall = 1;
+    const float infiniteDistance = 3;
+    float rightwheelSpeed = base_speed ;
+    float leftWheelSpeed;
+
+    float diff = std::abs( distance1 - distance2 );
+
+    if(diff >  minAcceptedDiff ){
+        std::cout << "PID - NORMAL" << std::endl;
+
+        if(distance1 == -1) distance1 = infiniteDistance;
+        if(distance2 == -1) distance2 = infiniteDistance;
+
+        float Kp = 0.2;
+         float Ki = 0.5;
+         float Kd = 0.8;
+
+        float error = distance2 - distance1;  //error is difference between two side sensors
+        float diff_error = error - last_error;
+        error_i += error;
+
+        leftWheelSpeed = base_speed + Kp * error + Ki * error_i + Kd * diff_error;
+
+        leftWheelSpeed = std::min(leftWheelSpeed, 2.3f);
+
+        last_error = error;
+
+       // rightwheelSpeed = base_speed; //Keep right wheel speed constant
+
+    } else if( distance1 >  maxDistToWall) {
+        std::cout << "PID - BIG DISTANCE TO WALL" << std::endl;
+        leftWheelSpeed = base_speed ;
+    } else {
+        std::cout << "PID - ELSE" << std::endl;
+        leftWheelSpeed = base_speed;
+    }
+
+    move(leftWheelSpeed, rightwheelSpeed);
+    return leftWheelSpeed;
+
+}
+
+
+float Robot::pid2(float distance1, float distance2){
+    //if no wall detected, move forward until find a wall
+    //when a wall is close, adapt individual wheels speed to start following it
+    //if there is an obstacle in front of me, find a way to avoid it
+
+    if(stoppedCounter > 5){
+        if(stoppedCounter == 6)
+            stoppedCounter += 51;
+        else
+            stoppedCounter -=2;
+        move(-1, -1);
+        return -1;
+    }
+
+
+    //first test if there is something in front of me
+    if(false && obstacleFront()){
+        float distanceFromObstacle = std::min(std::abs(sonarReadings[4]), std::abs(sonarReadings[4] ) );
+        float rightWheelSpeed = base_speed;
+        float leftWheelSpeed = base_speed;
+
+        if(distanceFromObstacle < 0.1){
+            stoppedCounter ++;
+        }
+
+        if(distanceFromObstacle < 0.25){
+            rightWheelSpeed = 3;
+            leftWheelSpeed = 0;
+        }
+
+        float coef = 4*distanceFromObstacle;
+        leftWheelSpeed = 1/coef* base_speed;
+        move(leftWheelSpeed, rightWheelSpeed);
+        return coef*base_speed;
+        /*
+        if(std::min(distance1, distance2) < 0.05){
+            move(0.5* base_speed, base_speed);
+            return 0.5*base_speed;
+        } else {
+            move(1.5*base_speed, base_speed);
+            return 1.5*base_speed;
+        }*/
+    }
+
+    if(distance1 == -1 && distance2 == -1 ){
+        move(2*base_speed, 2*base_speed);
+        return 2*base_speed;
+    }
+
+    const float minAcceptedDiff = 0.005;
+    const float maxDistToWall = 0.0;
+    const float infiniteDistance = 3;
+    float rightwheelSpeed = base_speed ;
+    float leftWheelSpeed;
+
+
+    float diff = std::abs( distance1 - distance2 );
+
+    if(diff >  minAcceptedDiff && std::min(distance2 , distance1) < 4*maxDistToWall){
+
+        if(distance1 == -1) distance1 = infiniteDistance;
+        if(distance2 == -1) distance2 = infiniteDistance;
+
+        float Kp = 4;
+
+        float error = distance2 - distance1;  //error is difference between two side sensors
+        leftWheelSpeed = base_speed + Kp * error;
+
+       // rightwheelSpeed = base_speed; //Keep right wheel speed constant
+
+    } else if( distance1 >  maxDistToWall) {
+        leftWheelSpeed = base_speed + distance1 ;
+    } else {
+        leftWheelSpeed = base_speed;
+    }
+
+    move(leftWheelSpeed, rightwheelSpeed);
+    return leftWheelSpeed;
+
+}
 
 void Robot::moveForward() {
     timeInCircle = 0;
@@ -469,6 +624,8 @@ void Robot::writeGT() {
      *              encoder[0] encoder[1] lastEncoder[0] lastEncoder[1] */
     float posX;
     float posY;
+    float robotX;
+    float robotY;
     FILE *data =  fopen("gt.txt", "at");
     if (data!=NULL)
     {
@@ -493,10 +650,14 @@ void Robot::writeGT() {
         }
 
         for (int i=0; i<NUM_SONARS; ++i) {
-            posX = (sonarReadings[i] > 0 && sonarReadings[i] < 0.95 ? robotPosition[0]+(sonarReadings[i]+0.2)*cos(robotOrientation[2]+sensorAngle[i]) : 4);      // obstacle X
+            robotX = xPosOdometry;      // robotPosition[0] ou xPosOdometry
+            robotY = yPosOdometry;      // robotPosition[1] ou yPosOdometry
+            posX = (sonarReadings[i] > 0.2 && sonarReadings[i] < 0.95 ? robotX+(sonarReadings[i]+0.2)*cos(robotOrientation[2]+sensorAngle[i]) : 4);      // obstacle X
             fprintf(data, "%.2f\t",posX);
-            posY = (sonarReadings[i] > 0 && sonarReadings[i] < 0.95 ? robotPosition[1]+(sonarReadings[i]+0.2)*sin(robotOrientation[2]+sensorAngle[i]) : 4);      // obstacle Y
+            posY = (sonarReadings[i] > 0.2 && sonarReadings[i] < 0.95 ? robotPosition[1]+(sonarReadings[i]+0.2)*sin(robotOrientation[2]+sensorAngle[i]) : 4);      // obstacle Y
             fprintf(data, "%.2f\t",posY);
+            if (i == 9)
+                std::cout << "r = " << robotX << "," << robotPosition[1] << "\t s = " << posX << "," << posY << " angle = " << sensorAngle[i] << " sin = " << sin(robotOrientation[2]+sensorAngle[i]) << std::endl;
         }
 
         fprintf(data, "\n");
@@ -538,7 +699,7 @@ void Robot::printPosition() {
 void Robot::move(float vLeft, float vRight) {
     simxSetJointTargetVelocity(clientID, motorHandle[0], vLeft, simx_opmode_streaming);
     simxSetJointTargetVelocity(clientID, motorHandle[1], vRight, simx_opmode_streaming);
-    std::cout << "*****> vLeft = " << vLeft << " angularLeft = " << angularVelocity[0] << " leftVelocity = " << leftVelocity << std::endl;
+//    std::cout << "*****> vLeft = " << vLeft << " angularLeft = " << angularVelocity[0] << " leftVelocity = " << leftVelocity << std::endl;
 }
 
 
