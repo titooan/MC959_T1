@@ -8,7 +8,7 @@ MatrixXd pose(1,3);     // [x,y,teta]
 
 MatrixXd velocity(3,1); // [Vx, Vy, w]
 
-simxFloat sensorAngle[8] = {PI/4,5/18*PI,PI/6,PI/18,-PI/18,-PI/6,-(5/18)*PI,-PI/4};
+float sensorAngle[16] = {PI/2.0,(5.0/18.0)*PI,PI/6.0,PI/18.0,-PI/18.0,-PI/6.0,-(5.0/18.0)*PI,-PI/2.0,-PI/2.0,-(13.0/18.0)*PI,-(5.0/6.0)*PI,-(17.0/18.0)*PI,(17.0/18.0)*PI,(5.0/6.0)*PI,(13.0/18.0)*PI,PI/2.0};
 int start = 1;
 int objectRight, objectLeft = 0;
 int turnRight = 1; // 0 pra vira esquerda e 1 pra direita
@@ -250,7 +250,7 @@ void Robot::updateOdometry() {
     dTeta = (rightVelocity-leftVelocity)/L;
 
     simxGetFloatSignal(clientID,"gyroZ",&gyroData,simx_opmode_streaming);
-    //std::cout << "gyroData = " << gyroData << "  " << gyroData*0.05 << " // dTeta = " << dTeta << std::endl;
+    std::cout << "gyroData = " << gyroData << "  " << gyroData*0.05 << " // dTeta (rodas) = " << dTeta << std::endl;
 
     dS = (leftVelocity+rightVelocity)/2;
 
@@ -270,8 +270,8 @@ void Robot::updateOdometry() {
     xPosOdometry += dX;
     yPosOdometry += dY;
 
-    //std::cout << " odometry           -->   [" << xPosOdometry << "," << yPosOdometry << "," << tetaOdometry << "]"  << std::endl;
-    //std::cout << " groundTruth [x,y,teta] = [" << robotPosition[0] << "," << robotPosition[1] << "," << robotOrientation[2] << "]" << std::endl;
+    std::cout << " odometry           -->   [" << xPosOdometry << "," << yPosOdometry << "," << tetaOdometry << "]"  << std::endl;
+    std::cout << " groundTruth [x,y,teta] = [" << robotPosition[0] << "," << robotPosition[1] << "," << robotOrientation[2] << "]" << std::endl;
 }
 
 
@@ -369,7 +369,6 @@ int Robot::blockedLeft() {
 void Robot::pid(){
     pid(sonarReadings[8], sonarReadings[7]);
 }
-
 
 float Robot::pid(float distance1, float distance2){
     //if no wall detected, move forward until find a wall
@@ -496,7 +495,6 @@ float Robot::pid2(float distance1, float distance2){
         float error = distance2 - distance1;  //error is difference between two side sensors
         leftWheelSpeed = base_speed + Kp * error;
 
-
        // rightwheelSpeed = base_speed; //Keep right wheel speed constant
 
     } else if( distance1 >  maxDistToWall) {
@@ -578,6 +576,8 @@ void Robot::writeGT() {
      *              encoder[0] encoder[1] lastEncoder[0] lastEncoder[1] */
     float posX;
     float posY;
+    float robotX;
+    float robotY;
     FILE *data =  fopen("gt.txt", "at");
     if (data!=NULL)
     {
@@ -602,10 +602,14 @@ void Robot::writeGT() {
         }
 
         for (int i=0; i<NUM_SONARS; ++i) {
-            posX = (sonarReadings[i] > 0 && sonarReadings[i] < 0.95 ? robotPosition[0]+(sonarReadings[i]+0.2)*cos(robotOrientation[2]+sensorAngle[i]) : 4);      // obstacle X
+            robotX = xPosOdometry;      // robotPosition[0] ou xPosOdometry
+            robotY = yPosOdometry;      // robotPosition[1] ou yPosOdometry
+            posX = (sonarReadings[i] > 0.2 && sonarReadings[i] < 0.95 ? robotX+(sonarReadings[i]+0.2)*cos(robotOrientation[2]+sensorAngle[i]) : 4);      // obstacle X
             fprintf(data, "%.2f\t",posX);
-            posY = (sonarReadings[i] > 0 && sonarReadings[i] < 0.95 ? robotPosition[1]+(sonarReadings[i]+0.2)*sin(robotOrientation[2]+sensorAngle[i]) : 4);      // obstacle Y
+            posY = (sonarReadings[i] > 0.2 && sonarReadings[i] < 0.95 ? robotPosition[1]+(sonarReadings[i]+0.2)*sin(robotOrientation[2]+sensorAngle[i]) : 4);      // obstacle Y
             fprintf(data, "%.2f\t",posY);
+            if (i == 9)
+                std::cout << "r = " << robotX << "," << robotPosition[1] << "\t s = " << posX << "," << posY << " angle = " << sensorAngle[i] << " sin = " << sin(robotOrientation[2]+sensorAngle[i]) << std::endl;
         }
 
         fprintf(data, "\n");
@@ -629,10 +633,9 @@ void Robot::writeSonars() {
         {
             for (int i=0; i<NUM_SONARS; ++i) {
                 fprintf(data, "%.2f\t",sonarReadings[i]);
-                //std::cout << "%.2f\t",sonarReadings[i];
             }
             fprintf(data, "\n");
-            //std::cout << std::endl;
+            std::cout << std::endl;
             fflush(data);
             fclose(data);
         }
@@ -648,7 +651,7 @@ void Robot::printPosition() {
 void Robot::move(float vLeft, float vRight) {
     simxSetJointTargetVelocity(clientID, motorHandle[0], vLeft, simx_opmode_streaming);
     simxSetJointTargetVelocity(clientID, motorHandle[1], vRight, simx_opmode_streaming);
-    //std::cout << "*****> vLeft = " << vLeft << " angularLeft = " << angularVelocity[0] << " leftVelocity = " << leftVelocity << std::endl;
+//    std::cout << "*****> vLeft = " << vLeft << " angularLeft = " << angularVelocity[0] << " leftVelocity = " << leftVelocity << std::endl;
 }
 
 
