@@ -27,6 +27,8 @@ float destX = 0;
 float destY = 0;
 float power = 0;        // power to apply on motor
 
+int stoppedCounter = 0;
+
 const float base_speed = 1.5;
 
 
@@ -248,7 +250,7 @@ void Robot::updateOdometry() {
     dTeta = (rightVelocity-leftVelocity)/L;
 
     simxGetFloatSignal(clientID,"gyroZ",&gyroData,simx_opmode_streaming);
-    std::cout << "gyroData = " << gyroData << "  " << gyroData*0.05 << " // dTeta = " << dTeta << std::endl;
+    //std::cout << "gyroData = " << gyroData << "  " << gyroData*0.05 << " // dTeta = " << dTeta << std::endl;
 
     dS = (leftVelocity+rightVelocity)/2;
 
@@ -268,8 +270,8 @@ void Robot::updateOdometry() {
     xPosOdometry += dX;
     yPosOdometry += dY;
 
-    std::cout << " odometry           -->   [" << xPosOdometry << "," << yPosOdometry << "," << tetaOdometry << "]"  << std::endl;
-    std::cout << " groundTruth [x,y,teta] = [" << robotPosition[0] << "," << robotPosition[1] << "," << robotOrientation[2] << "]" << std::endl;
+    //std::cout << " odometry           -->   [" << xPosOdometry << "," << yPosOdometry << "," << tetaOdometry << "]"  << std::endl;
+    //std::cout << " groundTruth [x,y,teta] = [" << robotPosition[0] << "," << robotPosition[1] << "," << robotOrientation[2] << "]" << std::endl;
 }
 
 
@@ -341,9 +343,9 @@ void Robot::update() {
 
 bool Robot::obstacleFront(){
     return
-            sonarReadings[4] != -1 && sonarReadings[4] < 0.6
+            sonarReadings[4] != -1 && sonarReadings[4] < 0.4
             ||
-            sonarReadings[3] != -1 && sonarReadings[3] < 0.6;
+            sonarReadings[3] != -1 && sonarReadings[3] < 0.4;
 }
 
 int Robot::blockedFront() {
@@ -368,16 +370,97 @@ void Robot::pid(){
     pid(sonarReadings[8], sonarReadings[7]);
 }
 
+
 float Robot::pid(float distance1, float distance2){
     //if no wall detected, move forward until find a wall
     //when a wall is close, adapt individual wheels speed to start following it
     //if there is an obstacle in front of me, find a way to avoid it
 
+    if(distance1 == -1 && distance2 == -1 ){
+        error_i = 0;
+        last_error = 0;
+        std::cout << "PID - NO WALL" << std::endl;
+        move(base_speed, base_speed);
+        return base_speed;
+    }
+
+    const float minAcceptedDiff = 0.005;
+    const float maxDistToWall = 1;
+    const float infiniteDistance = 3;
+    float rightwheelSpeed = base_speed ;
+    float leftWheelSpeed;
+
+    float diff = std::abs( distance1 - distance2 );
+
+    if(diff >  minAcceptedDiff ){
+        std::cout << "PID - NORMAL" << std::endl;
+
+        if(distance1 == -1) distance1 = infiniteDistance;
+        if(distance2 == -1) distance2 = infiniteDistance;
+
+        float Kp = 0.2;
+         float Ki = 0.5;
+         float Kd = 0.8;
+
+        float error = distance2 - distance1;  //error is difference between two side sensors
+        float diff_error = error - last_error;
+        error_i += error;
+
+        leftWheelSpeed = base_speed + Kp * error + Ki * error_i + Kd * diff_error;
+
+        leftWheelSpeed = std::min(leftWheelSpeed, 2.3f);
+
+        last_error = error;
+
+       // rightwheelSpeed = base_speed; //Keep right wheel speed constant
+
+    } else if( distance1 >  maxDistToWall) {
+        std::cout << "PID - BIG DISTANCE TO WALL" << std::endl;
+        leftWheelSpeed = base_speed ;
+    } else {
+        std::cout << "PID - ELSE" << std::endl;
+        leftWheelSpeed = base_speed;
+    }
+
+    move(leftWheelSpeed, rightwheelSpeed);
+    return leftWheelSpeed;
+
+}
+
+
+float Robot::pid2(float distance1, float distance2){
+    //if no wall detected, move forward until find a wall
+    //when a wall is close, adapt individual wheels speed to start following it
+    //if there is an obstacle in front of me, find a way to avoid it
+
+    if(stoppedCounter > 5){
+        if(stoppedCounter == 6)
+            stoppedCounter += 51;
+        else
+            stoppedCounter -=2;
+        move(-1, -1);
+        return -1;
+    }
+
+
     //first test if there is something in front of me
-    if(obstacleFront()){
+    if(false && obstacleFront()){
         float distanceFromObstacle = std::min(std::abs(sonarReadings[4]), std::abs(sonarReadings[4] ) );
+        float rightWheelSpeed = base_speed;
+        float leftWheelSpeed = base_speed;
+
+        if(distanceFromObstacle < 0.1){
+            stoppedCounter ++;
+        }
+
+        if(distanceFromObstacle < 0.25){
+            rightWheelSpeed = 3;
+            leftWheelSpeed = 0;
+        }
+
         float coef = 4*distanceFromObstacle;
-        move(1/coef* base_speed, base_speed);
+        leftWheelSpeed = 1/coef* base_speed;
+        move(leftWheelSpeed, rightWheelSpeed);
         return coef*base_speed;
         /*
         if(std::min(distance1, distance2) < 0.05){
@@ -390,12 +473,12 @@ float Robot::pid(float distance1, float distance2){
     }
 
     if(distance1 == -1 && distance2 == -1 ){
-        move(base_speed, base_speed);
-        return base_speed;
+        move(2*base_speed, 2*base_speed);
+        return 2*base_speed;
     }
 
     const float minAcceptedDiff = 0.005;
-    const float maxDistToWall = 0.15;
+    const float maxDistToWall = 0.0;
     const float infiniteDistance = 3;
     float rightwheelSpeed = base_speed ;
     float leftWheelSpeed;
@@ -403,15 +486,16 @@ float Robot::pid(float distance1, float distance2){
 
     float diff = std::abs( distance1 - distance2 );
 
-    if(diff >  minAcceptedDiff && std::min(distance2 , distance1) < 6*maxDistToWall){
+    if(diff >  minAcceptedDiff && std::min(distance2 , distance1) < 4*maxDistToWall){
 
         if(distance1 == -1) distance1 = infiniteDistance;
         if(distance2 == -1) distance2 = infiniteDistance;
 
-        float Kp = 5;
+        float Kp = 4;
 
         float error = distance2 - distance1;  //error is difference between two side sensors
         leftWheelSpeed = base_speed + Kp * error;
+
 
        // rightwheelSpeed = base_speed; //Keep right wheel speed constant
 
@@ -545,10 +629,10 @@ void Robot::writeSonars() {
         {
             for (int i=0; i<NUM_SONARS; ++i) {
                 fprintf(data, "%.2f\t",sonarReadings[i]);
-                std::cout << "%.2f\t",sonarReadings[i];
+                //std::cout << "%.2f\t",sonarReadings[i];
             }
             fprintf(data, "\n");
-            std::cout << std::endl;
+            //std::cout << std::endl;
             fflush(data);
             fclose(data);
         }
@@ -564,7 +648,7 @@ void Robot::printPosition() {
 void Robot::move(float vLeft, float vRight) {
     simxSetJointTargetVelocity(clientID, motorHandle[0], vLeft, simx_opmode_streaming);
     simxSetJointTargetVelocity(clientID, motorHandle[1], vRight, simx_opmode_streaming);
-    std::cout << "*****> vLeft = " << vLeft << " angularLeft = " << angularVelocity[0] << " leftVelocity = " << leftVelocity << std::endl;
+    //std::cout << "*****> vLeft = " << vLeft << " angularLeft = " << angularVelocity[0] << " leftVelocity = " << leftVelocity << std::endl;
 }
 
 
