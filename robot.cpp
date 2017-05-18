@@ -20,6 +20,8 @@ float yPosOdometry = -0.0976959;
 float tetaOdometry = 0;
 float gyroData = 0;
 
+const float base_speed = 1.5;
+
 
 
 MatrixXd Robot::translationMatrix(int dx, int dy) {
@@ -317,6 +319,50 @@ int Robot::blockedLeft() {
 //    return ((sonarReadings[15]!=-1 && sonarReadings[15]<0.75) || (sonarReadings[0]!=-1 && sonarReadings[0]<0.75));
 //}
 
+void Robot::pid(){
+    pid(sonarReadings[8], sonarReadings[7]);
+}
+
+float Robot::pid(float distance1, float distance2){
+    //if no wall detected, move forward until find a wall
+    //when a wall is close, adapt individual wheels speed to start following it
+    //if there is an obstacle in front of me, find a way to avoid it
+
+    if(distance1 == -1 && distance2 == -1 ){
+        move(base_speed, base_speed);
+        return base_speed;
+    }
+
+    const float minAcceptedDiff = 0.005;
+    const float maxDistToWall = 0.1;
+    const float infiniteDistance = 3;
+    float rightwheelSpeed = base_speed ;
+    float leftWheelSpeed;
+
+    float diff = std::abs( distance1 - distance2 );
+
+    if(diff >  minAcceptedDiff && std::min(distance2 , distance1) < 3*maxDistToWall){
+
+        if(distance1 == -1) distance1 = infiniteDistance;
+        if(distance2 == -1) distance2 = infiniteDistance;
+
+        float Kp = 5;
+        float error = distance2 - distance1;  //error is difference between two side sensors
+        leftWheelSpeed = base_speed + Kp * error;
+
+       // rightwheelSpeed = base_speed; //Keep right wheel speed constant
+
+    } else if( distance1 >  maxDistToWall) {
+        leftWheelSpeed = base_speed + distance1 ;
+    } else {
+        leftWheelSpeed = base_speed;
+    }
+
+    move(leftWheelSpeed, rightwheelSpeed);
+    return leftWheelSpeed;
+
+}
+
 void Robot::moveForward() {
     timeInCircle = 0;
     float vRight,vLeft;
@@ -359,6 +405,8 @@ void Robot::moveInCircle() {
 void Robot::updatePosition() {
     objectRight = blockedRight();
     objectLeft = blockedLeft();
+
+
 
     if (start) {
 //        std::cout << "--> TO PROCURANDOO A PAREDE..."<< std::endl;

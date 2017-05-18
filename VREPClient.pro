@@ -11,7 +11,7 @@ macx{
     PATH = /home/xubnto/UNICAMP/MC959/V-REP_PRO_EDU_V3_3_2_64_Linux/programming
 }
 unix{
-    PATH = /home/xubnto/UNICAMP/MC959/V-REP_PRO_EDU_V3_3_2_64_Linux/programming
+    PATH = /home/titouan/Documents/MC959/VREP/programming
 }
 
 

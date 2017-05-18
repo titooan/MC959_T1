@@ -36,6 +36,8 @@ public:
     void updatePosition();
     void moveInCircle();
     int frenteLivre();
+    float pid(float distance1, float distance2);
+    void pid();
 
     int clientID;
     simxInt handle;                                        // robot handle
