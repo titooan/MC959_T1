@@ -29,7 +29,7 @@ float yPlot[5] = {-0.0976959,-0.0976959,-0.0976959,-0.0976959,-0.0976959};
 
 int stoppedCounter = 0;
 
-const float base_speed = 1.5;
+const float base_speed = 2.0;
 
 
 
@@ -443,21 +443,20 @@ float Robot::pid(float distance1, float distance2){
 
     const float minAcceptedDiff = 0.005;
     const float maxDistToWall = 1;
-    const float infiniteDistance = 3;
+    const float infiniteDistance = 1.5;
     float rightwheelSpeed = base_speed ;
     float leftWheelSpeed;
 
     float diff = std::abs( distance1 - distance2 );
 
     if(diff >  minAcceptedDiff ){
-        std::cout << "PID - NORMAL" << std::endl;
 
         if(distance1 == -1) distance1 = infiniteDistance;
         if(distance2 == -1) distance2 = infiniteDistance;
 
-        float Kp = 0.2;
-         float Ki = 0.5;
-         float Kd = 0.8;
+        float Kp = 3;
+         float Ki = 0.2;
+         float Kd = 0.7;
 
         float error = distance2 - distance1;  //error is difference between two side sensors
         float diff_error = error - last_error;
@@ -465,7 +464,9 @@ float Robot::pid(float distance1, float distance2){
 
         leftWheelSpeed = base_speed + Kp * error + Ki * error_i + Kd * diff_error;
 
-        leftWheelSpeed = std::min(leftWheelSpeed, 2.3f);
+        //leftWheelSpeed = std::min(leftWheelSpeed, 2.3f);
+
+        std::cout << "PID - NORMAL | error: " << error << " ; error_i: " << error_i << "  ; diff_error: " << diff_error  << std::endl;
 
         last_error = error;
 
