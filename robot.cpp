@@ -116,15 +116,15 @@ Robot::Robot(int clientID, const char* name) {
 
 }
 
-int Robot::frenteLivre() {
+bool Robot::frenteLivre() {
     return ((sonarReadings[3]==-1 || sonarReadings[3]>0.75) && (sonarReadings[4]==-1 || sonarReadings[4]>0.75));
 }
 
-int Robot::esquerdaLivre() {
+bool Robot::esquerdaLivre() {
     return (sonarReadings[0]==-1 && sonarReadings[15]==-1);
 }
 
-int Robot::direitaLivre() {
+bool Robot::direitaLivre() {
     return (sonarReadings[7]==-1 && sonarReadings[8]==-1);
 }
 
@@ -206,6 +206,7 @@ void Robot::updateInfo() {
 
 
 void Robot::avoidObstacles() {
+    std::cout << "avoid!!" << std::endl;
     float pLeft,pRight;
     if (frenteLivre()) {
         pLeft = 3;
@@ -213,32 +214,34 @@ void Robot::avoidObstacles() {
 //        destX = robotPosition[0] + 2*cos(robotOrientation[2]);
 //        destY = robotPosition[1] + 2*sin(robotOrientation[2]);
 //        proportionalController();
-    } else if (lastTurn) {
+    } else /*if (lastTurn)*/ {
         if (direitaLivre()){
-            pLeft = 2;
-            pRight = 0.5;
-            lastTurn = 0;
-        } else if (esquerdaLivre()){
-            pLeft = 0.5;
-            pRight = 2;
-            lastTurn = 1;
-        } else {
             pLeft = 1;
             pRight = -1;
-        }
-    } else {
-        if (esquerdaLivre()){
-            pLeft = 0.5;
-            pRight = 2;
-            lastTurn = 1;
-        } else if (direitaLivre()){
-            pLeft = 2;
-            pRight = 0.5;
             lastTurn = 0;
-        } else {
+        } /*else if (esquerdaLivre()){
+            pLeft = -1;
+            pRight = 1;
+            lastTurn = 1;
+        }*/ else {
             pLeft = 1;
             pRight = -1;
+            lastTurn = 1;
         }
+//    } else {
+//        if (esquerdaLivre()){
+//            pLeft = -1;
+//            pRight = 1;
+//            lastTurn = 1;
+////        } else if (direitaLivre()){
+////            pLeft = 1;
+////            pRight = -1;
+////            lastTurn = 0;
+//        } else {
+//            pLeft = 1;
+//            pRight = -1;
+//            lastTurn = 0;
+//        }
     }
 
     move(pLeft,pRight);
@@ -415,14 +418,21 @@ int Robot::blockedLeft() {
 //}
 
 void Robot::pid(){
-    pid(sonarReadings[8], sonarReadings[7]);
+    if (!frenteLivre() || (esquerdaLivre() && direitaLivre()))
+        avoidObstacles();
+    else {
+        if (!direitaLivre())
+            pid(sonarReadings[8], sonarReadings[7]);
+        else
+            pid(sonarReadings[0], sonarReadings[15]);
+    }
 }
 
 float Robot::pid(float distance1, float distance2){
     //if no wall detected, move forward until find a wall
     //when a wall is close, adapt individual wheels speed to start following it
     //if there is an obstacle in front of me, find a way to avoid it
-
+    std::cout << "PID" << std::endl;
     if(distance1 == -1 && distance2 == -1 ){
         error_i = 0;
         last_error = 0;
@@ -656,7 +666,7 @@ void Robot::writeGT() {
             fprintf(data, "%.2f\t",posX);
             posY = (sonarReadings[i] > 0.2 && sonarReadings[i] < 0.95 ? robotPosition[1]+(sonarReadings[i]+0.2)*sin(robotOrientation[2]+sensorAngle[i]) : 4);      // obstacle Y
             fprintf(data, "%.2f\t",posY);
-            if (i == 9)
+//            if (i == 9)
 //                std::cout << "r = " << robotX << "," << robotPosition[1] << "\t s = " << posX << "," << posY << " angle = " << sensorAngle[i] << " sin = " << sin(robotOrientation[2]+sensorAngle[i]) << std::endl;
         }
 

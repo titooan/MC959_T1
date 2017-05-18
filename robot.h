@@ -35,9 +35,9 @@ public:
     void moveForward();
     void updatePosition();
     void moveInCircle();
-    int frenteLivre();
-    int esquerdaLivre();
-    int direitaLivre();
+    bool frenteLivre();
+    bool esquerdaLivre();
+    bool direitaLivre();
 
     void avoidObstacles();
 
