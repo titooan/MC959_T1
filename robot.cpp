@@ -293,7 +293,7 @@ void Robot::updateOdometry() {
     dTeta = (rightVelocity-leftVelocity)/L;
 
     simxGetFloatSignal(clientID,"gyroZ",&gyroData,simx_opmode_streaming);
-    std::cout << "gyroData = " << gyroData << "  " << gyroData*0.05 << " // dTeta (rodas) = " << dTeta << std::endl;
+//    std::cout << "gyroData = " << gyroData << "  " << gyroData*0.05 << " // dTeta (rodas) = " << dTeta << std::endl;
 
     dS = (leftVelocity+rightVelocity)/2;
 
@@ -318,8 +318,8 @@ void Robot::updateOdometry() {
     xPosOdometry += dX;
     yPosOdometry += dY;
 
-    std::cout << " odometry           -->   [" << xPosOdometry << "," << yPosOdometry << "," << tetaOdometry << "]"  << std::endl;
-    std::cout << " groundTruth [x,y,teta] = [" << robotPosition[0] << "," << robotPosition[1] << "," << robotOrientation[2] << "]" << std::endl;
+//    std::cout << " odometry           -->   [" << xPosOdometry << "," << yPosOdometry << "," << tetaOdometry << "]"  << std::endl;
+//    std::cout << " groundTruth [x,y,teta] = [" << robotPosition[0] << "," << robotPosition[1] << "," << robotOrientation[2] << "]" << std::endl;
 }
 
 
@@ -657,7 +657,7 @@ void Robot::writeGT() {
             posY = (sonarReadings[i] > 0.2 && sonarReadings[i] < 0.95 ? robotPosition[1]+(sonarReadings[i]+0.2)*sin(robotOrientation[2]+sensorAngle[i]) : 4);      // obstacle Y
             fprintf(data, "%.2f\t",posY);
             if (i == 9)
-                std::cout << "r = " << robotX << "," << robotPosition[1] << "\t s = " << posX << "," << posY << " angle = " << sensorAngle[i] << " sin = " << sin(robotOrientation[2]+sensorAngle[i]) << std::endl;
+//                std::cout << "r = " << robotX << "," << robotPosition[1] << "\t s = " << posX << "," << posY << " angle = " << sensorAngle[i] << " sin = " << sin(robotOrientation[2]+sensorAngle[i]) << std::endl;
         }
 
         fprintf(data, "\n");
