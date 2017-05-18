@@ -19,6 +19,13 @@ float xPosOdometry = -2.97;
 float yPosOdometry = -0.0976959;
 float tetaOdometry = 0;
 float gyroData = 0;
+float tetaPlot[5] = {0,0,0,0,0};
+float xPlot[5] = {-2.97,-2.97,-2.97,-2.97,-2.97};
+float yPlot[5] = {-0.0976959,-0.0976959,-0.0976959,-0.0976959,-0.0976959};
+
+float destX = 0;
+float destY = 0;
+float power = 0;        // power to apply on motor
 
 const float base_speed = 1.5;
 
@@ -131,6 +138,8 @@ void Robot::detectedPosition(simxFloat** position){
         //std::cout<<"sensor"<<i<<" seen obstacle, x = "<<posX<<" y = "<<posY<<std::endl;
     }
 }
+
+
 void Robot::updateInfo() {
 //    std::cout << "leftMotor: " << motorHandle[0] << std::endl;
 //    std::cout << "joint: " << encoder[0] << std::endl;
@@ -181,13 +190,32 @@ void Robot::updateInfo() {
     lastEncoder[1] = encoder[1];
 }
 
+//void Robot::myController() {
+//    float pLeft,pRight;
+//    proportionalController();
+//    if (destX > robotPosition[0])
+//        pLeft = power[0]
+
+
+//}
+
+
+//void Robot::proportionalController() {
+//    float Kp = 0.5;
+//    float error[2] = {destX-robotPosition[0], destY-robotPosition[1]};
+//    power[2] = {Kp*error[0], Kp*error[1]};
+//}
+
 void Robot::updateOdometry() {
     float dTeta;
     float tetaVelocity;
     float curveRadius;
+    float deltaTeta;
     float dS;
     float dX;
     float dY;
+    float dXPlot[5];
+    float dYPlot[5];
 
     //*****************************************************
     // calculo velocidade angular em cada roda
@@ -222,11 +250,20 @@ void Robot::updateOdometry() {
     simxGetFloatSignal(clientID,"gyroZ",&gyroData,simx_opmode_streaming);
     std::cout << "gyroData = " << gyroData << "  " << gyroData*0.05 << " // dTeta = " << dTeta << std::endl;
 
-    tetaOdometry += (gyroData*0.05 + dTeta)/2;
-
     dS = (leftVelocity+rightVelocity)/2;
-    dX = dS*cos(tetaOdometry+dTeta/2);
-    dY = dS*sin(tetaOdometry+dTeta/2);
+
+    for (int i=0; i<5; ++i) {
+        tetaPlot[i] += ((1+i)*gyroData*0.05 + dTeta)/(2+i);
+        xPlot[i] += dS*cos(tetaPlot[i]+(((1+i)*gyroData*0.05 + dTeta)/(2+i))/2);
+        yPlot[i] += dS*sin(tetaPlot[i]+(((1+i)*gyroData*0.05 + dTeta)/(2+i))/2);
+    }
+
+    deltaTeta = (leftVelocity*rightVelocity > 0 ? dTeta : (3*gyroData*0.05 + dTeta)/4);//(2.5*gyroData*0.05 + dTeta)/3.5;
+
+    tetaOdometry += deltaTeta;
+
+    dX = dS*cos(tetaOdometry+deltaTeta/2);
+    dY = dS*sin(tetaOdometry+deltaTeta/2);
 
     xPosOdometry += dX;
     yPosOdometry += dY;
@@ -406,8 +443,6 @@ void Robot::updatePosition() {
     objectRight = blockedRight();
     objectLeft = blockedLeft();
 
-
-
     if (start) {
 //        std::cout << "--> TO PROCURANDOO A PAREDE..."<< std::endl;
         moveForward();
@@ -431,6 +466,8 @@ void Robot::writeGT() {
     /* write data to file */
     /* file format: robotPosition[x] robotPosition[y] robotPosition[z] robotLastPosition[x] robotLastPosition[y] robotLastPosition[z]
      *              encoder[0] encoder[1] lastEncoder[0] lastEncoder[1] */
+    float posX;
+    float posY;
     FILE *data =  fopen("gt.txt", "at");
     if (data!=NULL)
     {
@@ -448,6 +485,18 @@ void Robot::writeGT() {
         fprintf(data, "%.2f\t",xPosOdometry);
         fprintf(data, "%.2f\t",yPosOdometry);
         fprintf(data, "%.2f\t",tetaOdometry);
+
+        for (int i=0; i<5; ++i) {
+            fprintf(data, "%.2f\t",xPlot[i]);
+            fprintf(data, "%.2f\t",yPlot[i]);
+        }
+
+        for (int i=0; i<NUM_SONARS; ++i) {
+            posX = (sonarReadings[i] > 0 && sonarReadings[i] < 0.95 ? robotPosition[0]+(sonarReadings[i]+0.2)*cos(robotOrientation[2]+sensorAngle[i]) : 4);      // obstacle X
+            fprintf(data, "%.2f\t",posX);
+            posY = (sonarReadings[i] > 0 && sonarReadings[i] < 0.95 ? robotPosition[1]+(sonarReadings[i]+0.2)*sin(robotOrientation[2]+sensorAngle[i]) : 4);      // obstacle Y
+            fprintf(data, "%.2f\t",posY);
+        }
 
         fprintf(data, "\n");
         fflush(data);
@@ -468,9 +517,12 @@ void Robot::writeSonars() {
     {
         if (data!=NULL)
         {
-            for (int i=0; i<NUM_SONARS; ++i)
+            for (int i=0; i<NUM_SONARS; ++i) {
                 fprintf(data, "%.2f\t",sonarReadings[i]);
+                std::cout << "%.2f\t",sonarReadings[i];
+            }
             fprintf(data, "\n");
+            std::cout << std::endl;
             fflush(data);
             fclose(data);
         }

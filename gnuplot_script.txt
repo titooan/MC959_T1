@@ -1,1 +1,1 @@
-plot 'test.txt' using 1:2 title 'gt' with lines, 'test.txt' using 14:15 title 'odometry' with lines
+plot 'gt.txt' using 1:2 title 'gt' with lines, 'gt.txt' using 14:15 title 'algo' with lines,  'gt.txt' using 17:18 title 'odom_2,3_1' with lines, 'gt.txt' using 19:20 title 'odom_2,4_1' with lines, 'gt.txt' using 21:22 title 'odom_2,5_1' with lines, 'gt.txt' using 23:24 title 'odom_2,6_1' with lines, 'gt.txt' using 25:26 title 'odom_2,7_1' with lines
