@@ -13,6 +13,7 @@ int start = 1;
 int objectRight, objectLeft = 0;
 int turnRight = 1; // 0 pra vira esquerda e 1 pra direita
 int timeInCircle = 0;
+int lastTurn = 0;   // 0 se virou pra direita, 1 se virou pra esquerda
 float leftVelocity, rightVelocity = 0;
 
 float xPosOdometry = -2.97;
@@ -23,9 +24,8 @@ float tetaPlot[5] = {0,0,0,0,0};
 float xPlot[5] = {-2.97,-2.97,-2.97,-2.97,-2.97};
 float yPlot[5] = {-0.0976959,-0.0976959,-0.0976959,-0.0976959,-0.0976959};
 
-float destX = 0;
-float destY = 0;
-float power = 0;        // power to apply on motor
+//MatrixXd destination(2);
+//MatrixXd power(2);          // power to apply on each motor
 
 
 MatrixXd Robot::translationMatrix(int dx, int dy) {
@@ -115,6 +115,14 @@ int Robot::frenteLivre() {
     return ((sonarReadings[3]==-1 || sonarReadings[3]>0.75) && (sonarReadings[4]==-1 || sonarReadings[4]>0.75));
 }
 
+int Robot::esquerdaLivre() {
+    return (sonarReadings[0]==-1 && sonarReadings[15]==-1);
+}
+
+int Robot::direitaLivre() {
+    return (sonarReadings[7]==-1 && sonarReadings[8]==-1);
+}
+
 void Robot::detectedPosition(simxFloat** position){
     int i =0;
     simxFloat posX,posY,angle,robotRay;
@@ -187,14 +195,49 @@ void Robot::updateInfo() {
     lastEncoder[1] = encoder[1];
 }
 
-//void Robot::myController() {
-//    float pLeft,pRight;
-//    proportionalController();
-//    if (destX > robotPosition[0])
-//        pLeft = power[0]
-
+//void Robot::calculateDest() {
 
 //}
+
+
+void Robot::avoidObstacles() {
+    float pLeft,pRight;
+    if (frenteLivre()) {
+        pLeft = 3;
+        pRight = 3;
+//        destX = robotPosition[0] + 2*cos(robotOrientation[2]);
+//        destY = robotPosition[1] + 2*sin(robotOrientation[2]);
+//        proportionalController();
+    } else if (lastTurn) {
+        if (direitaLivre()){
+            pLeft = 2;
+            pRight = 0.5;
+            lastTurn = 0;
+        } else if (esquerdaLivre()){
+            pLeft = 0.5;
+            pRight = 2;
+            lastTurn = 1;
+        } else {
+            pLeft = 1;
+            pRight = -1;
+        }
+    } else {
+        if (esquerdaLivre()){
+            pLeft = 0.5;
+            pRight = 2;
+            lastTurn = 1;
+        } else if (direitaLivre()){
+            pLeft = 2;
+            pRight = 0.5;
+            lastTurn = 0;
+        } else {
+            pLeft = 1;
+            pRight = -1;
+        }
+    }
+
+    move(pLeft,pRight);
+}
 
 
 //void Robot::proportionalController() {
@@ -255,9 +298,14 @@ void Robot::updateOdometry() {
         yPlot[i] += dS*sin(tetaPlot[i]+(((1+i)*gyroData*0.05 + dTeta)/(2+i))/2);
     }
 
-    deltaTeta = (leftVelocity*rightVelocity > 0 ? dTeta : (3*gyroData*0.05 + dTeta)/4);//(2.5*gyroData*0.05 + dTeta)/3.5;
+//    deltaTeta = (leftVelocity*rightVelocity > 0 ? (4*dTeta+gyroData*0.05)/5 : (gyroData*0.05 + dTeta)/2);//(2.5*gyroData*0.05 + dTeta)/3.5;
+    deltaTeta = (9*dTeta+gyroData*0.05)/10;
 
     tetaOdometry += deltaTeta;
+    if (tetaOdometry > PI)
+        tetaOdometry = -PI+(tetaOdometry-PI);
+    if (tetaOdometry < -PI)
+        tetaOdometry = PI-(tetaOdometry+PI);
 
     dX = dS*cos(tetaOdometry+deltaTeta/2);
     dY = dS*sin(tetaOdometry+deltaTeta/2);
@@ -274,19 +322,19 @@ void Robot::updateOdometry() {
 void Robot::update() {
 
 
-    float vRight,vLeft;
-    if (blockedFront()) {
-//        std::cout << "--> FRENTE BLOQUEADA"<< std::endl;
-        vRight = 0.5;
-        vLeft = -0.5;
-    } else {
-//        std::cout << "--> FRENTE LIVRE"<< std::endl;
-        vRight = 3;
-        vLeft = 3;
-    }
+//    float vRight,vLeft;
+//    if (blockedFront()) {
+////        std::cout << "--> FRENTE BLOQUEADA"<< std::endl;
+//        vRight = 0.5;
+//        vLeft = -0.5;
+//    } else {
+////        std::cout << "--> FRENTE LIVRE"<< std::endl;
+//        vRight = 3;
+//        vLeft = 3;
+//    }
 
-//    move(20,-10);
-    move(vRight,vLeft);
+////    move(20,-10);
+//    move(vRight,vLeft);
 
 
 //    simxSetJointTargetVelocity(clientID, motorHandle[0], velocity, simx_opmode_streaming);
@@ -472,7 +520,6 @@ void Robot::writeSonars() {
         {
             for (int i=0; i<NUM_SONARS; ++i) {
                 fprintf(data, "%.2f\t",sonarReadings[i]);
-                std::cout << "%.2f\t",sonarReadings[i];
             }
             fprintf(data, "\n");
             std::cout << std::endl;

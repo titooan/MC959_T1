@@ -36,6 +36,10 @@ public:
     void updatePosition();
     void moveInCircle();
     int frenteLivre();
+    int esquerdaLivre();
+    int direitaLivre();
+
+    void avoidObstacles();
 
     int clientID;
     simxInt handle;                                        // robot handle
