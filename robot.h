@@ -38,6 +38,7 @@ public:
     int frenteLivre();
     float pid(float distance1, float distance2);
     void pid();
+    bool obstacleFront();
 
     int clientID;
     simxInt handle;                                        // robot handle

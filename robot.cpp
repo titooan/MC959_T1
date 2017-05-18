@@ -338,6 +338,14 @@ void Robot::update() {
 
 
 }
+
+bool Robot::obstacleFront(){
+    return
+            sonarReadings[4] != -1 && sonarReadings[4] < 0.6
+            ||
+            sonarReadings[3] != -1 && sonarReadings[3] < 0.6;
+}
+
 int Robot::blockedFront() {
     return ((sonarReadings[2]!=-1 && sonarReadings[2]<0.3) || sonarReadings[3]!=-1 || sonarReadings[4]!=-1 || (sonarReadings[5]!=-1 && sonarReadings[5]<0.3));
 }
@@ -365,25 +373,43 @@ float Robot::pid(float distance1, float distance2){
     //when a wall is close, adapt individual wheels speed to start following it
     //if there is an obstacle in front of me, find a way to avoid it
 
+    //first test if there is something in front of me
+    if(obstacleFront()){
+        float distanceFromObstacle = std::min(std::abs(sonarReadings[4]), std::abs(sonarReadings[4] ) );
+        float coef = 4*distanceFromObstacle;
+        move(1/coef* base_speed, base_speed);
+        return coef*base_speed;
+        /*
+        if(std::min(distance1, distance2) < 0.05){
+            move(0.5* base_speed, base_speed);
+            return 0.5*base_speed;
+        } else {
+            move(1.5*base_speed, base_speed);
+            return 1.5*base_speed;
+        }*/
+    }
+
     if(distance1 == -1 && distance2 == -1 ){
         move(base_speed, base_speed);
         return base_speed;
     }
 
     const float minAcceptedDiff = 0.005;
-    const float maxDistToWall = 0.1;
+    const float maxDistToWall = 0.15;
     const float infiniteDistance = 3;
     float rightwheelSpeed = base_speed ;
     float leftWheelSpeed;
 
+
     float diff = std::abs( distance1 - distance2 );
 
-    if(diff >  minAcceptedDiff && std::min(distance2 , distance1) < 3*maxDistToWall){
+    if(diff >  minAcceptedDiff && std::min(distance2 , distance1) < 6*maxDistToWall){
 
         if(distance1 == -1) distance1 = infiniteDistance;
         if(distance2 == -1) distance2 = infiniteDistance;
 
         float Kp = 5;
+
         float error = distance2 - distance1;  //error is difference between two side sensors
         leftWheelSpeed = base_speed + Kp * error;
 
