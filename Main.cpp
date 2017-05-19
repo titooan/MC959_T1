@@ -8,10 +8,6 @@
 #define SIZE_AMBIENTE 1500
 #define STEP 1
 
-#include <Eigen/Dense>
-
-using Eigen::MatrixXd;
-
 extern "C" {
    #include "extApi.h"
     #include "v_repLib.h"
@@ -142,7 +138,7 @@ int main(int argc, char *argv[])
         coordinatesToMatrixIndex(robot->robotPosition,indexesRobot,STEP);
         robot->detectedPosition(positionAbsoluteObstacles);
 //        robot->updatePosition();
-        robot->pid();
+        robot->wallFollow();
 //        robot->avoidObstacles();
         for(int j=0;j<8;j++){
             coordinatesToMatrixIndex(positionAbsoluteObstacles[j],indexesObstacles[j],STEP);

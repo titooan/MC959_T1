@@ -9,10 +9,6 @@
 #include <stdio.h>
 #include <math.h>
 
-#include <Eigen/Dense>
-using Eigen::MatrixXd;
-
-
 extern "C" {
    #include "extApi.h"
    #include "v_repLib.h"
@@ -26,7 +22,6 @@ public:
     void updateInfo();
     void writeGT();
     void writeSonars();
-    void changeCoordinateToOrigin(float *localFrame, float *transformedFrame);
     void detectedPosition(simxFloat** position);
     void move(float vLeft, float vRight);
     int blockedFront();
@@ -41,9 +36,8 @@ public:
 
     void avoidObstacles();
 
-    float pid(float distance1, float distance2);
-    float pid2(float distance1, float distance2);
-    void pid();
+    float wallFollow(float distance1, float distance2);
+    void wallFollow();
     bool obstacleFront();
 
 
@@ -66,8 +60,6 @@ public:
     float sonarReadings[NUM_SONARS];
 
     void multiplyMatrix();
-    MatrixXd translationMatrix(int dx, int dy);
-    MatrixXd rotationMatrix(double alfa);
     void updateOdometry();
 
     const float R = 0.097;      // raio da roda em m
