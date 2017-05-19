@@ -137,8 +137,8 @@ int main(int argc, char *argv[])
         //robot->update();
         coordinatesToMatrixIndex(robot->robotPosition,indexesRobot,STEP);
         robot->detectedPosition(positionAbsoluteObstacles);
-//        robot->updatePosition();
-        robot->wallFollow();
+        robot->updatePosition();
+//        robot->exploreStrategy();
 //        robot->avoidObstacles();
         for(int j=0;j<8;j++){
             coordinatesToMatrixIndex(positionAbsoluteObstacles[j],indexesObstacles[j],STEP);

@@ -36,8 +36,8 @@ public:
 
     void avoidObstacles();
 
-    float wallFollow(float distance1, float distance2);
-    void wallFollow();
+    float wallFollowPID(float distance1, float distance2);
+    void exploreStrategy();
     bool obstacleFront();
 
 

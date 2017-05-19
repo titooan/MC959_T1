@@ -26,7 +26,7 @@ int stoppedCounter = 0;
 const float base_speed = 2.0;
 
 Robot::Robot(int clientID, const char* name) {
-
+    std::cout << "initializing robot" << std::endl;
     FILE *data =  fopen("gt.txt", "wt");
     if (data!=NULL)
         fclose(data);
@@ -243,8 +243,8 @@ void Robot::updateOdometry() {
         yPlot[i] += dS*sin(tetaPlot[i]+(((1+i)*gyroData*0.05 + dTeta)/(2+i))/2);
     }
 
-//    deltaTeta = (leftVelocity*rightVelocity > 0 ? (4*dTeta+gyroData*0.05)/5 : (gyroData*0.05 + dTeta)/2);//(2.5*gyroData*0.05 + dTeta)/3.5;
-    deltaTeta = (9*dTeta+gyroData*0.05)/10;
+//    deltaTeta = (leftVelocity*rightVelocity > 0 ? (4*dTeta+gyroData*0.05)/5 : (2.5*gyroData*0.05 + dTeta)/3.5);
+    deltaTeta = 0.045*gyroData;
 
     tetaOdometry += deltaTeta;
     if (tetaOdometry > PI)
@@ -288,27 +288,27 @@ int Robot::blockedLeft() {
 //    return ((sonarReadings[15]!=-1 && sonarReadings[15]<0.75) || (sonarReadings[0]!=-1 && sonarReadings[0]<0.75));
 //}
 
-void Robot::wallFollow(){
+void Robot::exploreStrategy(){
     if (!frenteLivre() || (esquerdaLivre() && direitaLivre())) {
         avoidObstacles();
         error_i = 0;
     }  else {
         if (!direitaLivre())
-            wallFollow(sonarReadings[8], sonarReadings[7]);
+            wallFollowPID(sonarReadings[8], sonarReadings[7]);
         else
-            wallFollow(sonarReadings[0], sonarReadings[15]);
+            wallFollowPID(sonarReadings[0], sonarReadings[15]);
     }
 }
 
-float Robot::wallFollow(float distance1, float distance2){
+float Robot::wallFollowPID(float distance1, float distance2){
     //if no wall detected, move forward until find a wall
     //when a wall is close, adapt individual wheels speed to start following it
     //if there is an obstacle in front of me, find a way to avoid it
-    std::cout << "PID" << std::endl;
+
     if(distance1 == -1 && distance2 == -1 ){
         error_i = 0;
         last_error = 0;
-        std::cout << "PID - NO WALL" << std::endl;
+//        std::cout << "PID - NO WALL" << std::endl;
         move(base_speed, base_speed);
         return base_speed;
     }
@@ -336,15 +336,15 @@ float Robot::wallFollow(float distance1, float distance2){
 
         leftWheelSpeed = base_speed + Kp * error + Ki * error_i + Kd * diff_error;
 
-        std::cout << "PID - NORMAL | error: " << error << " ; error_i: " << error_i << "  ; diff_error: " << diff_error  << std::endl;
+//        std::cout << "PID - NORMAL | error: " << error << " ; error_i: " << error_i << "  ; diff_error: " << diff_error  << std::endl;
 
         last_error = error;
 
     } else if( distance1 >  maxDistToWall) {
-        std::cout << "PID - BIG DISTANCE TO WALL" << std::endl;
+//        std::cout << "PID - BIG DISTANCE TO WALL" << std::endl;
         leftWheelSpeed = base_speed ;
     } else {
-        std::cout << "PID - ELSE" << std::endl;
+//        std::cout << "PID - ELSE" << std::endl;
         leftWheelSpeed = base_speed;
     }
 
